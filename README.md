@@ -14,7 +14,8 @@ Vault 3 &#169; Copyright 2021, [`Eric Bergman-Terrell`](https://www.ericbt.com)
 
 * [`website (Desktop and Android versions)`](https://ericbt.com/vault3)
 * [`Google Play`](https://play.google.com/store/apps/details?id=com.ericbt.Vault3Paid)
-* [`github repo`](https://github.com/EricTerrell/Vault3.Android)
+* [`GitHub repo (Android)`](https://github.com/EricTerrell/Vault3.Android)
+* [`GitHub repo (Desktop)`](https://github.com/EricTerrell/Vault3.Desktop)
 
 # Desktop Version
 
@@ -24,6 +25,8 @@ A version of [`Vault 3`](https://ericbt.com/vault3) for Windows, Linux, and Mac 
 
 1. Load in Android Studio
 1. Run!
+
+Note: If you want to build CommonCode.jar (in libs folder), see [`Vault 3 for Desktop GitHub Repo`](https://github.com/EricTerrell/Vault3.Desktop).
 
 # License
 
