@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ericbt.vault3base"
+    android:versionCode="15168"
+    android:versionName="1.68">
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:name="com.ericbt.vault3base.VaultApplication"
+        android:icon="@drawable/vault"
+        android:theme="@style/AppBaseTheme"
+        android:label="@string/app_name"
+        android:allowBackup="false"
+        >
+        <activity
+            android:name="com.ericbt.vault3base.Vault3"
+            android:label="@string/app_name"
+            android:exported="true"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host=""
+                    android:mimeType="*/*"
+                    android:pathPattern=".*\\.vl3"
+                    android:scheme="file"
+                    />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.ericbt.vault3base.VaultPreferenceActivity"
+            android:label="Settings">
+        </activity>
+
+        <activity android:name="com.ericbt.vault3base.FileActivity" />
+        <activity android:name="com.ericbt.vault3base.TextActivity" />
+        <activity android:name="com.ericbt.vault3base.SearchActivity" />
+        <activity android:name="com.ericbt.vault3base.NewDocumentActivity" />
+        <activity android:name="com.ericbt.vault3base.PasswordPromptActivity" />
+        <activity android:name="com.ericbt.vault3base.AboutActivity" />
+        <activity android:name="com.ericbt.vault3base.SearchOptionsActivity" />
+        <activity android:name="com.ericbt.vault3base.SetFontActivity" />
+        <activity android:name="com.ericbt.vault3base.LicenseTermsActivity" />
+        <activity android:name="com.ericbt.vault3base.CopyDocumentActivity" />
+        <activity android:name="com.ericbt.vault3base.RenameDocumentActivity" />
+        <activity android:name="com.ericbt.vault3base.RemoveDocumentActivity" />
+        <activity android:name="com.ericbt.vault3base.UpgradeActivity" />
+        <activity android:name="com.ericbt.vault3base.ChangePasswordActivity" />
+        <activity android:name="com.ericbt.vault3base.RemoveOutlineItemActivity" />
+        <activity android:name="com.ericbt.vault3base.UpgradeVaultDocumentActivity" />
+        <activity android:name="com.ericbt.vault3base.MoveItemHereActivity" />
+        <activity android:name="com.ericbt.vault3base.EditItemActivity" />
+        <activity android:name="com.ericbt.vault3base.AddItemActivity"/>
+
+        <receiver android:name=".CustomBroadcastReceiver" />
+    </application>
+</manifest>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Title:" >
+    </TextView>
+
+    <EditText
+        android:id="@+id/Title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:inputType="none" 
+        >
+    </EditText>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Text:" >
+    </TextView>
+
+    <EditText
+        android:id="@+id/Text"
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:gravity="top"
+        android:minLines="1"
+        android:scrollbars="vertical"
+        android:singleLine="false"
+        android:inputType="none"        
+        >
+    </EditText>
+
+    <RadioGroup
+        android:id="@+id/AddAboveOrBelowSelectedItem"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        >
+
+        <RadioButton
+			android:textColor="?android:attr/textColorPrimary"
+            android:id="@+id/AddAboveSelectedItem"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Above Selected Item" >
+        </RadioButton>
+
+        <RadioButton
+			android:textColor="?android:attr/textColorPrimary"
+            android:id="@+id/AddBelowSelectedItem"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Add Below Selected Item" >
+        </RadioButton>
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/ErrorMessage"
+        style="@style/ErrorMessage"
+        android:text="Title must be non-blank."
+        >
+    </TextView>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="0dip"
+        android:paddingLeft="3dip"
+        android:paddingRight="3dip"
+        android:paddingTop="8dip" >
+        <Button
+            android:id="@+id/CancelButton"
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel" >
+        </Button>
+        <Button
+            android:id="@+id/OKButton"
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:enabled="false"
+            android:text="OK" >
+        </Button>
+    </LinearLayout>
+
+</LinearLayout>

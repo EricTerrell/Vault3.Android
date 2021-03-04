@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search:" />
+
+        <Spinner
+            android:theme="@style/CustomSpinnerItemStyle"
+            android:id="@+id/SearchScope"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/SearchScopeEntries"
+            android:entryValues="@array/SearchScopeValues" >
+        </Spinner>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search:" />
+
+        <Spinner
+            android:theme="@style/CustomSpinnerItemStyle"
+            android:id="@+id/SearchFields"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/SearchFieldsEntries"
+            android:entryValues="@array/SearchFieldsValues" >
+        </Spinner>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Match:" >
+        </TextView>
+
+        <CheckBox
+            android:id="@+id/MatchWholeWords"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Words" >
+        </CheckBox>
+
+        <CheckBox
+            android:id="@+id/MatchCase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Case" >
+        </CheckBox>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Find:" >
+        </TextView>
+
+        <Spinner
+            android:theme="@style/CustomSpinnerItemStyle"
+            android:id="@+id/MustFind"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/MustFindEntries"
+            android:entryValues="@array/MustFindValues" >
+        </Spinner>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Max Hits:" />
+
+        <Spinner
+            android:theme="@style/CustomSpinnerItemStyle"
+            android:id="@+id/MaxSearchHits"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/SearchHitLimitEntries"
+            android:entryValues="@array/SearchHitLimitEntries" >
+        </Spinner>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <CheckBox
+            android:id="@+id/SortSearchResults"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sort Search Results" >
+        </CheckBox>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="0dip"
+        android:paddingLeft="3dip"
+        android:paddingRight="3dip"
+        android:paddingTop="8dip" >
+
+        <Button
+            android:id="@+id/CancelButton"
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel" >
+        </Button>
+
+        <Button
+            android:id="@+id/OKButton"
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="OK" >
+        </Button>
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:id="@+id/adLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" >
+
+        <Button
+            android:id="@+id/UpgradeButton"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Upgrade Vault 3" >
+        </Button>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:layout_weight="1"
+        >
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="0.5"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            >
+            <LinearLayout
+                android:id="@+id/ParentLayout"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:clickable="false"
+                android:focusable="true"
+                android:longClickable="false"
+                android:orientation="horizontal" >
+
+                <ImageView
+                    android:id="@+id/GoUpImage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:clickable="false"
+                    android:contentDescription="go up"
+                    android:paddingBottom="2dip"
+                    android:paddingTop="2dip"
+                    android:paddingRight="5dip"
+                    android:scaleType="matrix"
+                    android:src="@drawable/expander_ic_maximized" >
+                </ImageView>
+
+                <TextView
+                    android:id="@+id/tvParent"
+                    style="@style/BigBoldWhiteText"
+                    android:layout_width="0dip"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:paddingLeft="5dip"
+                    android:paddingRight="5dip" >
+                </TextView>
+            </LinearLayout>
+
+            <View
+                android:id="@+id/Divider"
+                android:layout_width="fill_parent"
+                android:layout_height="2dip"
+                android:background="@color/white" >
+            </View>
+
+            <ListView
+                android:id="@+id/list_view"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:choiceMode="singleChoice"
+                android:scrollbars="vertical" >
+            </ListView>
+
+            <LinearLayout
+                android:id="@+id/EmptyNavigateListView"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+
+                <Button
+                    android:id="@+id/AddItem"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:enabled="false"
+                    android:text="Add Item"
+                    android:visibility="gone" >
+                </Button>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <fragment
+            android:id="@+id/textFragment"
+            android:name="com.ericbt.vault3base.TextFragment"
+            android:layout_width="0dp"
+            android:layout_weight="0.5"
+            android:layout_height="match_parent"
+            />
+
+    </LinearLayout>
+
+</LinearLayout>

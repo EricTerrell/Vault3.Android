@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical" 
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        >
+        <TextView
+        	android:layout_width="fill_parent"
+        	android:layout_height="wrap_content"
+        	android:text="Place Item:"
+        >
+        </TextView>
+     	<RadioGroup
+     		android:layout_width="fill_parent"
+     		android:layout_height="wrap_content"
+     		android:orientation="vertical"
+     	>
+     		<RadioButton 
+     			android:text="Above Selected Item"
+     			android:id="@+id/PlaceAboveSelectedItem"
+     			android:layout_width="fill_parent"
+     			android:layout_height="wrap_content"
+     		>
+     		</RadioButton>
+     		<RadioButton
+     			android:text="Below Selected Item"
+     			android:id="@+id/PlaceBelowSelectedItem"
+     			android:layout_width="fill_parent"
+     			android:layout_height="wrap_content"
+     			android:checked="true"
+     		>
+     		</RadioButton>
+     	</RadioGroup>
+        <Button
+            android:id="@+id/OKButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OK" >
+        </Button>
+</LinearLayout>

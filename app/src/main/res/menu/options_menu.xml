@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/FileMenuItem"
+        android:showAsAction="always"
+        android:title="File"></item>
+    <item
+        android:id="@+id/SearchMenuItem"
+        android:showAsAction="always"
+        android:title="Search"></item>
+    <item
+        android:id="@+id/HelpMenuItem"
+        android:showAsAction="ifRoom"
+        android:title="Help"></item>
+    <item
+        android:id="@+id/about_menu_item"
+        android:showAsAction="ifRoom"
+        android:title="About Vault 3"></item>
+    <item
+        android:id="@+id/settings_menu_item"
+        android:showAsAction="ifRoom"
+        android:title="Settings"></item>
+    <item
+        android:id="@+id/SortMenuItem"
+        android:showAsAction="ifRoom"
+        android:title="Sort"></item>
+    <item
+        android:id="@+id/CloudSyncMenuItem"
+        android:showAsAction="ifRoom"
+        android:title="Cloud Sync"></item>
+</menu>

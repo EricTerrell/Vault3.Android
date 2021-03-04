@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Vault 3 (Free)</string>
+    <string name="paid_version_url">market://details?id=com.ericbt.Vault3Paid</string>
+    <string name="email_download_url">https://market.android.com/details?id=com.ericbt.Vault3Paid</string>
+    <string name="app_version">free</string>
+    <string name="app_store">Google</string>
+</resources>

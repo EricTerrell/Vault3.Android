@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+	<PreferenceCategory android:title="Documents">
+		<EditTextPreference
+			android:key="RootFolderPath"
+			android:title="Root Folder"
+			android:summary="Specify the folder containing all Vault 3 documents."
+		>
+		</EditTextPreference>
+	</PreferenceCategory>
+	<PreferenceCategory android:title="Security">
+        <CheckBoxPreference
+            android:key="CachePasswords"
+            android:title="Cache Passwords"
+            android:summary="Only require a password to be entered the first time a given Vault 3 document is accessed after Vault 3 is launched"
+            android:defaultValue="true">
+        </CheckBoxPreference>
+		<CheckBoxPreference
+			android:key="ForceUppercasePasswords"
+			android:title="Uppercase Passwords"
+			android:summary="Automatically make passwords uppercase"
+			android:defaultValue="true">
+		</CheckBoxPreference>
+		<CheckBoxPreference
+			android:key="ShowPasswords"
+			android:title="Show Passwords"
+			android:summary="Show passwords as they are being entered"
+			android:defaultValue="false">
+		</CheckBoxPreference>
+	</PreferenceCategory>
+	<PreferenceCategory android:title="Outline">
+		<CheckBoxPreference
+			android:key="DisplayWrenchIcon"
+			android:title="Display Wrench Icon"
+			android:summary="Display the wrench icon used to manipulate outline items"
+			android:defaultValue="true">
+		</CheckBoxPreference>
+	</PreferenceCategory>
+	<PreferenceCategory android:title="Text Dialog">
+		<CheckBoxPreference 
+			android:key="UseDefaultTextFont"
+			android:title="Use Default Font"
+			android:summary="Specify a font to be used when a font has not been specified for the outline item" 
+			android:defaultValue="false">
+		</CheckBoxPreference>
+		<ListPreference
+		    android:key="DefaultTextFontTypeface"
+			android:entries="@array/FontEntries"
+			android:title="Typeface"
+			android:summary="Default font typeface"
+			android:entryValues="@array/FontEntries"
+		    >
+		</ListPreference>
+		<ListPreference
+		    android:key="DefaultTextFontStyle"
+		    android:title="Style"
+		    android:summary="Default font style"
+		    android:entries="@array/FontStyleEntries"
+			android:entryValues="@array/FontStyleEntries"
+		>
+		</ListPreference>
+		<ListPreference
+		    android:key="DefaultTextFontSize"
+		    android:title="Size"
+		    android:summary="Default font size"
+		    android:entries="@array/FontSizeEntries"
+			android:entryValues="@array/FontSizeEntries"
+		>
+		</ListPreference>
+		<ListPreference
+		    android:key="DefaultTextFontColor"
+		    android:title="Color"
+		    android:summary="Default font color"
+		    android:entries="@array/ColorEntries"
+			android:entryValues="@array/ColorEntries"
+		>
+		</ListPreference>
+		<ListPreference
+		    android:key="TextBackgroundColor"
+		    android:title="Background Color"
+		    android:summary="Background color"
+		    android:entries="@array/ColorEntriesWithDefault"
+			android:entryValues="@array/ColorEntriesWithDefault"
+		>
+		</ListPreference>
+	</PreferenceCategory>
+    <PreferenceCategory android:title="Editing">
+        <ListPreference
+            android:key="EditMode"
+            android:title="Edit Mode"
+            android:summary="Specify editing mode used when editing and adding outline items"
+            android:entries="@array/EditModeEntries"
+            android:entryValues="@array/EditModeValues"
+            android:defaultValue="PAN"
+            >
+        </ListPreference>
+    </PreferenceCategory>
+</PreferenceScreen>

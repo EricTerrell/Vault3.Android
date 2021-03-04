@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:id="@+id/AddMenuItem" android:title="Add">
+	</item>
+	<item android:id="@+id/RemoveMenuItem" android:title="Remove">
+	</item>
+	<item android:id="@+id/MoveItemMenuItem" android:title="Move">
+	</item>
+	<item android:id="@+id/MoveItemHereMenuItem" android:title="Move Item Here">
+	</item>
+	<item android:id="@+id/MoveUpMenuItem" android:title="Move Up">
+	</item>
+	<item android:id="@+id/MoveDownMenuItem" android:title="Move Down">
+	</item>
+	<item android:id="@+id/IndentMenuItem" android:title="Indent">
+	</item>
+	<item android:id="@+id/UnIndentMenuItem" android:title="Unindent">
+	</item>
+</menu>
