@@ -5,6 +5,7 @@ Vault 3 stores your notes as an outline. Vault 3 organizes your information into
 # Screenshots
 
 ![`Vault 3 Screenshot`](https://ericbt.com/artwork/Vault3ForAndroid/screenshot_1.png "Vault 3 Screenshot")
+
 ![`Vault 3 Screenshot`](https://ericbt.com/artwork/Vault3ForAndroid/screenshot_2.png "Vault 3 Screenshot")
 
 # Copyright
