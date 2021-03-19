@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,25 +21,25 @@
 package com.ericbt.vault3base;
 
 public class MoveItemTaskParameters {
-	private OutlineItem movingOutlineItem;
+	private final OutlineItem movingOutlineItem;
 	
 	public OutlineItem getMovingOutlineItem() {
 		return movingOutlineItem;
 	}
 
-	private OutlineItem selectedOutlineItem;
+	private final OutlineItem selectedOutlineItem;
 
 	public OutlineItem getSelectedOutlineItem() {
 		return selectedOutlineItem;
 	}
 
-	private boolean placeAbove;
+	private final boolean placeAbove;
 	
 	public boolean getPlaceAbove() {
 		return placeAbove;
 	}
 	
-	private Vault3 vault3Activity;
+	private final Vault3 vault3Activity;
 	
 	public Vault3 getVault3Activity() { return vault3Activity; }
 	

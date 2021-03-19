@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -31,9 +31,9 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 public class FileArrayAdapter extends ArrayAdapter<String> {
-	private Context context;
-	private int resource;
-	private int textViewResourceId;
+	private final Context context;
+	private final int resource;
+	private final int textViewResourceId;
 	private boolean enabled;
 	
 	public FileArrayAdapter(Context context, int resource, int textViewResourceId) {

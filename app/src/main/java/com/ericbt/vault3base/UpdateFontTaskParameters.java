@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -55,11 +55,11 @@ public class UpdateFontTaskParameters {
 		this.color = color;
 	}
 	
-	private TextDisplayUpdate textDisplayUpdate;
+	private final TextDisplayUpdate textDisplayUpdate;
 	
 	public TextDisplayUpdate getTextDisplayUpdate() { return textDisplayUpdate; }
 
-	private Context context;
+	private final Context context;
 
 	public Context getContext() {
 		return context;

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -26,7 +26,7 @@ import java.util.HashMap;
 import android.util.Log;
 
 public class PasswordCache {
-	private static HashMap<String, String> cache = new HashMap<>();
+	private static final HashMap<String, String> cache = new HashMap<>();
 	
 	public void put(String filePath, String password) {
 		if (VaultPreferenceActivity.getCachePasswords()) {

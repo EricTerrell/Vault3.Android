@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,7 +21,8 @@
 package com.ericbt.vault3base;
 
 public class CopyDocumentTaskParameters {
-	private String sourceFilePath, destFilePath;
+	private final String sourceFilePath;
+	private final String destFilePath;
 	
 	public String getSourceFilePath() {
 		return sourceFilePath;
@@ -31,7 +32,7 @@ public class CopyDocumentTaskParameters {
 		return destFilePath;
 	}
 
-	private FileActivity fileActivity;
+	private final FileActivity fileActivity;
 	
 	public FileActivity getFileActivity() { return fileActivity; }
 	

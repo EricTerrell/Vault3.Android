@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,7 +21,7 @@
 package com.ericbt.vault3base;
 
 public class DocumentAction {
-	private String dbFilePath;
+	private final String dbFilePath;
 	
 	public String getDbFilePath() { return dbFilePath; }
 
@@ -29,15 +29,15 @@ public class DocumentAction {
 		Load, Close
 	}
 
-	private Action action;
+	private final Action action;
 	
 	public Action getAction() { return action; }
 
-	private int outlineItemId;
+	private final int outlineItemId;
 	
 	public int getOutlineId() { return outlineItemId; }
 	
-	private String password; 
+	private final String password;
 	
 	public String getPassword() { return password; }
 

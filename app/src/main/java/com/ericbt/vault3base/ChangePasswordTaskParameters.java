@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,13 +21,13 @@
 package com.ericbt.vault3base;
 
 public class ChangePasswordTaskParameters {
-	private String newPassword;
+	private final String newPassword;
 	
 	public String getNewPassword() {
 		return newPassword;
 	}
 
-	private FileActivity fileActivity;
+	private final FileActivity fileActivity;
 	
 	public FileActivity getFileActivity() { return fileActivity; }
 	

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -23,29 +23,29 @@ package com.ericbt.vault3base;
 import android.content.Context;
 
 public class UpdateOutlineItemTaskParameters {
-	private OutlineItem outlineItem;
+	private final OutlineItem outlineItem;
 
 	public OutlineItem getOutlineItem() {
 		return outlineItem;
 	}
 
-	private String newTitle;
+	private final String newTitle;
 
 	public String getNewTitle() {
 		return newTitle;
 	}
 
-	private String newText;
+	private final String newText;
 
 	public String getNewText() {
 		return newText;
 	}
 	
-	private TextDisplayUpdate textDisplayUpdate;
+	private final TextDisplayUpdate textDisplayUpdate;
 	
 	public TextDisplayUpdate getTextDisplayUpdate() { return textDisplayUpdate; }
 
-	private Context context;
+	private final Context context;
 
 	public Context getContext() {
 		return context;

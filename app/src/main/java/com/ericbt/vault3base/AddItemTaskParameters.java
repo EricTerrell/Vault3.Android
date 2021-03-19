@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,8 +21,9 @@
 package com.ericbt.vault3base;
 
 public class AddItemTaskParameters {
-	private OutlineItem newOutlineItem, selectedOutlineItem;
-	private boolean addAbove;
+	private final OutlineItem newOutlineItem;
+	private final OutlineItem selectedOutlineItem;
+	private final boolean addAbove;
 	
 	public OutlineItem getNewOutlineItem() {
 		return newOutlineItem;
@@ -36,13 +37,13 @@ public class AddItemTaskParameters {
 		return addAbove;
 	}
 	
-	private boolean displayHint;
+	private final boolean displayHint;
 	
 	public boolean getDisplayHint() {
 		return displayHint;
 	}
 	
-	private Vault3 vault3Activity;
+	private final Vault3 vault3Activity;
 	
 	public Vault3 getVault3Activity() {
 		return vault3Activity;

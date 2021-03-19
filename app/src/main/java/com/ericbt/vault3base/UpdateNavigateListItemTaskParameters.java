@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,13 +21,13 @@
 package com.ericbt.vault3base;
 
 public class UpdateNavigateListItemTaskParameters {
-	private int outlineItemID;
+	private final int outlineItemID;
 
 	public int getOutlineItemID() {
 		return outlineItemID;
 	}
 	
-	private Vault3 vault3Activity;
+	private final Vault3 vault3Activity;
 	
 	public Vault3 getVault3Activity() {
 		return vault3Activity;

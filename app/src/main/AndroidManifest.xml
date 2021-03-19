@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ericbt.vault3base"
-    android:versionCode="15168"
-    android:versionName="1.68">
+    android:versionCode="15171"
+    android:versionName="1.71">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
@@ -12,6 +13,7 @@
         android:theme="@style/AppBaseTheme"
         android:label="@string/app_name"
         android:allowBackup="false"
+        android:requestLegacyExternalStorage="true"
         >
         <activity
             android:name="com.ericbt.vault3base.Vault3"

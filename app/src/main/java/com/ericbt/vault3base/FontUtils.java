@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -29,7 +29,7 @@ import android.graphics.Typeface;
 import android.util.DisplayMetrics;
 
 public class FontUtils {
-	private static Map<String, Integer> colorMap;
+	private static final Map<String, Integer> colorMap;
 
 	private final static float pointsPerInch = 72.0f;
 	

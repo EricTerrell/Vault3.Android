@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,7 +21,7 @@
 package com.ericbt.vault3base;
 
 public class TableAndColumnNames {
-	public class OutlineItem {
+	public static class OutlineItem {
 		public static final String TableName = "OutlineItem";
 		
 		public static final String ID        = "ID";
@@ -35,7 +35,7 @@ public class TableAndColumnNames {
 		public static final String Blue      = "Blue";
 	}
 	
-	public class VaultDocumentInfo {
+	public static class VaultDocumentInfo {
 		public static final String TableName = "VaultDocumentInfo";
 
 		public static final String Name      = "Name";

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -26,9 +26,12 @@ import android.content.DialogInterface;
 import android.widget.Button;
 
 public class Prompt {
-	private Activity activity;
-	private String title, message, positiveButtonText, negativeButtonText;
-	private int defaultButton;
+	private final Activity activity;
+	private final String title;
+    private final String message;
+    private final String positiveButtonText;
+    private final String negativeButtonText;
+	private final int defaultButton;
 	private AlertDialog promptDialog;
 	
 	public Prompt(Activity activity, String title, String message, String positiveButtonText, String negativeButtonText, int defaultButton) {

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -22,8 +22,8 @@ package com.ericbt.vault3base;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -35,8 +35,8 @@ import android.widget.TextView;
 import java.util.Comparator;
 
 public class SearchResultsArrayAdapter extends ArrayAdapter<SearchHit> {
-	private Context context;
-	private int textViewResourceId;
+	private final Context context;
+	private final int textViewResourceId;
     private SearchActivity searchActivity;
 	private final SearchHitComparitor searchHitComparitor = new SearchHitComparitor();
 

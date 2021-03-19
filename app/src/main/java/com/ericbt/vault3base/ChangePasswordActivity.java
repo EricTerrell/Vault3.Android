@@ -19,7 +19,7 @@ import android.widget.TextView;
 public class ChangePasswordActivity extends Activity {
 	private EditText newPasswordEditText, newPasswordAgainEditText;
 	private TextView errorMessage;
-	private String passwordToShortErrorMessage = String.format("Password must be at least %d characters long.", CryptoUtils.getMinPasswordLength());
+	private final String passwordToShortErrorMessage = String.format("Password must be at least %d characters long.", CryptoUtils.getMinPasswordLength());
 	private CheckBox requirePassword, forceUppercase, showPassword;
 	private Button okButton;
 

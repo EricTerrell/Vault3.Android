@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -24,7 +24,7 @@ import java.text.Collator;
 import java.util.Comparator;
 
 public class OutlineItemComparitor implements Comparator<OutlineItem> {
-	private Collator collator = Collator.getInstance();
+	private final Collator collator = Collator.getInstance();
 	
 	@Override
 	public int compare(OutlineItem outlineItem1, OutlineItem outlineItem2) {

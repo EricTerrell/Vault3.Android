@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -24,7 +24,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 
 public class ExitPrompt {
-	private Vault3 vault3Activity;
+	private final Vault3 vault3Activity;
 	private AlertDialog promptDialog;
 	
 	public ExitPrompt(Vault3 vault3Activity) {

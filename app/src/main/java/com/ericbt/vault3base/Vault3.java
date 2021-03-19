@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -63,7 +63,7 @@ public class Vault3 extends AsyncTaskActivity {
 	private OutlineItem childOutlineItem, movingOutlineItem; 
 	private ImageView goUpImage;
 	private View parentLayout;
-	private SparseIntArray scrollPositions = new SparseIntArray();
+	private final SparseIntArray scrollPositions = new SparseIntArray();
 	private TextFragment textFragment;
 	private CustomBroadcastReceiver customBroadcastReceiver;
 

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,11 +21,11 @@
 package com.ericbt.vault3base;
 
 public class SearchTaskParameters {
-	private SearchActivity searchActivity;
+	private final SearchActivity searchActivity;
 	
 	public SearchActivity getSearchActivity() { return searchActivity; }
 	
-	private Search search;
+	private final Search search;
 	
 	public Search getSearch() { return search; }
 	

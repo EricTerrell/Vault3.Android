@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2015, Eric Bergman-Terrell
+  (C) Copyright 2021, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,7 +21,7 @@
 package com.ericbt.vault3base;
 
 public class CreateDatabaseTaskResult {
-	private String dbPath;
+	private final String dbPath;
 	
 	public String getDbPath() {
 		return dbPath;
