@@ -184,7 +184,7 @@ public class ChangePasswordActivity extends Activity {
 	}
 
 	private void updatePasswordInputType() {
-		EditText passwordEditTexts[] = new EditText[] { newPasswordEditText, newPasswordAgainEditText };
+		EditText[] passwordEditTexts = new EditText[] { newPasswordEditText, newPasswordAgainEditText };
 
 		for (EditText passwordEditText : passwordEditTexts) {
 			PasswordUI.updatePasswordInputType(passwordEditText, forceUppercase.isChecked(), showPassword.isChecked());

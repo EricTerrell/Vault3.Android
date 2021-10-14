@@ -71,4 +71,7 @@ public class StringLiterals {
 	public static final String DestinationFilePath          = "DestinationFilePath";
 	public static final String RedoSearchOnResume           = "RedoSearchOnResume";
 	public static final String AllowCancel                  = "ALLOW_CANCEL";
+	public static final String RequestPermissions           = "Request Permissions";
+	public static final String OK                           = "OK";
+	public static final String Cancel                       = "Cancel";
 }

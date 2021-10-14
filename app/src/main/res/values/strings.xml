@@ -8,6 +8,11 @@
     <string name="online_help_url">http://www.ericbt.com/Vault3ForAndroid</string>
     <string name="cloud_sync_url">http://www.ericbt.com/Vault3ForAndroid/misc#cloudsync</string>
     <string name="app_version"></string>
+
+    <string name="permissions">Permissions</string>
+    <string name="permissions_not_granted">Permissions were not granted.\n\nVault 3 will not function correctly until permissions are granted.\n\nPermissions are necessary to read and write Vault 3 documents.\n\nClick \"Request Permissions\" to grant permissions.</string>
+    <string name="game_over">Vault 3 will not function without permissions. Please un-install Vault 3.</string>
+
     <string name="app_store"></string>
     <string name="bn_EAN"></string>
     <string-array name="SearchScopeEntries">

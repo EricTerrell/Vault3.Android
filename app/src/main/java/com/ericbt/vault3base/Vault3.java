@@ -20,6 +20,7 @@
 
 package com.ericbt.vault3base;
 
+import android.Manifest;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
@@ -27,6 +28,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.net.Uri;
@@ -40,13 +42,15 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnLongClickListener;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import java.io.File;
 
@@ -55,6 +59,9 @@ import commonCode.VaultException;
 import fonts.FontList;
 
 public class Vault3 extends AsyncTaskActivity {
+	private final static int REQUEST_PERMISSION_CODE = 1000;
+	private final static int ACCEPT_LICENSE_TERMS    = 1001;
+
 	private Menu optionsMenu;
 	private Button addItem;
 	private ListView navigateListView;
@@ -78,6 +85,10 @@ public class Vault3 extends AsyncTaskActivity {
 	public static final int SETTINGS = 9;
 
 	private DocumentAction documentAction;
+
+	private final static String PERMISSION = Manifest.permission.WRITE_EXTERNAL_STORAGE;
+
+	private int numberOfRejections = 0;
 
 	@Override
     public void onCreate(Bundle savedInstanceState) {
@@ -112,45 +123,36 @@ public class Vault3 extends AsyncTaskActivity {
 
 			initActionBar();
 
-			parentTextView = (TextView) findViewById(R.id.tvParent);
+			parentTextView = findViewById(R.id.tvParent);
 			
-			navigateListView = (ListView) findViewById(R.id.list_view);
+			navigateListView = findViewById(R.id.list_view);
 			navigateListView.setEmptyView(findViewById(R.id.EmptyNavigateListView));
 			registerForContextMenu(navigateListView);
 
-			goUpImage = (ImageView) findViewById(R.id.GoUpImage);
+			goUpImage = findViewById(R.id.GoUpImage);
 			
 			parentLayout = findViewById(R.id.ParentLayout);
 			
-			goUpImage.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					saveScrollPosition();
+			goUpImage.setOnClickListener(v -> {
+				saveScrollPosition();
 
-					goToParent();
-				}
+				goToParent();
 			});
 			
-			goUpImage.setOnLongClickListener(new OnLongClickListener() {
-				@Override
-				public boolean onLongClick(View arg0) {
-					saveScrollPosition();
-					goToRoot();
-					
-					return false;
-				}
+			goUpImage.setOnLongClickListener(v -> {
+				saveScrollPosition();
+				goToRoot();
+
+				return false;
 			});
 
-			addItem = (Button) findViewById(R.id.AddItem);
+			addItem = findViewById(R.id.AddItem);
 			
-			addItem.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					Intent intent = new Intent(Vault3.this, AddItemActivity.class);
-					intent.putExtra(StringLiterals.DisplayHint, true); // tell the user how to add subsequent items.
-					intent.putExtra(StringLiterals.AboveOrBelowPrompt, false);
-	                startActivityForResult(intent, ADD_ITEM_RESULT);     
-				}
+			addItem.setOnClickListener(v -> {
+				Intent intent = new Intent(Vault3.this, AddItemActivity.class);
+				intent.putExtra(StringLiterals.DisplayHint, true); // tell the user how to add subsequent items.
+				intent.putExtra(StringLiterals.AboveOrBelowPrompt, false);
+				startActivityForResult(intent, ADD_ITEM_RESULT);
 			});
 			
 			navigateArrayAdapter = new NavigateArrayAdapter(this, 0, 0, new OutlineItem());
@@ -159,6 +161,15 @@ public class Vault3 extends AsyncTaskActivity {
 			enableDisableParentLayout(false);
 		    
 		    addAds();
+
+			// Prompt user to accept license terms if they have not been previously accepted.
+			if (!VaultPreferenceActivity.getUserAcceptedTerms()) {
+				final Intent licenseTermsIntent = new Intent(Vault3.this, LicenseTermsActivity.class);
+				licenseTermsIntent.putExtra(StringLiterals.AllowCancel, false);
+				startActivityForResult(licenseTermsIntent, ACCEPT_LICENSE_TERMS);
+			} else {
+				requestPermission();
+			}
 		}
 
 		customBroadcastReceiver = createCustomBroadcastReceiver();
@@ -276,15 +287,6 @@ public class Vault3 extends AsyncTaskActivity {
 		super.onResume();
 
 		Log.i(StringLiterals.LogTag, "Vault3.onResume begin");
-
-        // Prompt user to accept license terms if they have not been previously accepted.
-        if (!VaultPreferenceActivity.getUserAcceptedTerms()) {
-			Intent licenseTermsIntent = new Intent(Vault3.this, LicenseTermsActivity.class);
-			licenseTermsIntent.putExtra(StringLiterals.AllowCancel, false);
-            startActivity(licenseTermsIntent);     
-        }
-
-		Permissions.requestReadWriteExternalStoragePermission(this);
 
         boolean loadedFromFileManager = false;
 
@@ -471,7 +473,7 @@ public class Vault3 extends AsyncTaskActivity {
 		
 		ex.printStackTrace();
 
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle(String.format("Cannot Open %s Document", StringLiterals.ProgramName));
         alertDialogBuilder.setPositiveButton("OK", null);
 
@@ -495,7 +497,7 @@ public class Vault3 extends AsyncTaskActivity {
 	}
 
 	private void upgradeVaultDocument(String dbFilePath) {
-		Intent intent = new Intent(this, UpgradeVaultDocumentActivity.class);
+		final Intent intent = new Intent(this, UpgradeVaultDocumentActivity.class);
 		intent.putExtra(StringLiterals.DBPath, dbFilePath);
 		startActivityForResult(intent, UPGRADE_VAULT_DOCUMENT);
 	}
@@ -505,9 +507,9 @@ public class Vault3 extends AsyncTaskActivity {
 			setEnabled(false);
 			parentLayout.setBackgroundDrawable(getResources().getDrawable(android.R.drawable.list_selector_background));
 			
-			OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+			final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
 			
-			UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItem.getParentId(), this);
+			final UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItem.getParentId(), this);
 			new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
 		}
 	}
@@ -517,7 +519,7 @@ public class Vault3 extends AsyncTaskActivity {
 			setEnabled(false);
 			parentLayout.setBackgroundDrawable(getResources().getDrawable(android.R.drawable.list_selector_background));
 			
-			UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(1, this);
+			final UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(1, this);
 			new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
 		}
 	}
@@ -942,6 +944,11 @@ public class Vault3 extends AsyncTaskActivity {
 				((BaseAdapter) navigateListView.getAdapter()).notifyDataSetChanged();
 			}
 			break;
+
+			case ACCEPT_LICENSE_TERMS: {
+				requestPermission();
+			}
+			break;
 		}
 
 		if (documentAction == null) {
@@ -954,4 +961,75 @@ public class Vault3 extends AsyncTaskActivity {
 		Log.i(StringLiterals.LogTag, "Vault3.onActivityResult end");
 	}
 
+	private boolean havePermission() {
+		return ContextCompat.checkSelfPermission(this, PERMISSION) == PackageManager.PERMISSION_GRANTED;
+	}
+
+	private void requestPermission() {
+		Log.i(StringLiterals.LogTag, "requestPermission");
+
+		if (!havePermission()) {
+			ActivityCompat.requestPermissions(this, new String[] { PERMISSION }, REQUEST_PERMISSION_CODE);
+		}
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode,
+										   String[] permissions,
+										   int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+		Log.i(StringLiterals.LogTag, "MainActivity.onRequestPermissionsResult");
+
+		if (requestCode == REQUEST_PERMISSION_CODE) {
+			// Checking whether user granted the permission or not.
+			if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+				numberOfRejections++;
+
+				Log.i(StringLiterals.LogTag,
+						String.format("numberOfRejections: %d", numberOfRejections));
+
+				// https://www.androidpolice.com/2020/02/19/android-11-will-block-apps-from-repeatedly-asking-for-permissions/
+				if (numberOfRejections < 2) {
+					displayPermissionsDeniedMessage();
+				} else {
+					displayGameOverMessage();
+				}
+			}
+		}
+	}
+
+	private void displayPermissionsDeniedMessage() {
+		Log.i(StringLiterals.LogTag, "displayPermissionsDeniedMessage");
+
+		final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder.setTitle(getString(R.string.permissions));
+		alertDialogBuilder.setMessage(getString(R.string.permissions_not_granted));
+
+		alertDialogBuilder.setPositiveButton(StringLiterals.RequestPermissions, (dialog, which) -> {
+			requestPermission();
+		});
+
+		alertDialogBuilder.setNegativeButton(StringLiterals.Cancel, (dialog, which) -> {
+			finish();
+		});
+
+		final AlertDialog promptDialog = alertDialogBuilder.create();
+		promptDialog.setCancelable(false);
+		promptDialog.show();
+	}
+
+	private void displayGameOverMessage() {
+		final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder.setTitle(getString(R.string.permissions));
+		alertDialogBuilder.setMessage(getString(R.string.game_over));
+
+		alertDialogBuilder.setPositiveButton(StringLiterals.OK, (dialog, which) -> {
+			finish();
+		});
+
+		final AlertDialog promptDialog = alertDialogBuilder.create();
+		promptDialog.setCancelable(false);
+		promptDialog.show();
+	}
 }
