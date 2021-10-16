@@ -155,14 +155,13 @@ public class Search {
 		}
 
 		// Create a list containing all tokens, quoted and unquoted.
-		List<String> tokenList = new ArrayList<>();
-		tokenList.addAll(quotedTextList);
+		final List<String> tokenList = new ArrayList<>(quotedTextList);
 		
-		String[] unquotedTokens = unquotedText.toString().split(" ");
+		final String[] unquotedTokens = unquotedText.toString().split(" ");
 
         Collections.addAll(tokenList, unquotedTokens);
 
-		List<String> finalTokenList = new ArrayList<>();
+		final List<String> finalTokenList = new ArrayList<>();
 		
 		for (String token : tokenList) {
 			token = token.trim();
@@ -173,7 +172,7 @@ public class Search {
 			}
 		}
 
-		return finalTokenList.toArray(new String[finalTokenList.size()]);
+		return finalTokenList.toArray(new String[0]);
 	}
 
 	/**
@@ -202,7 +201,7 @@ public class Search {
 			Log.i(StringLiterals.LogTag, searchToken);
 		}
 		
-		return patterns.toArray(new Pattern[patterns.size()]);
+		return patterns.toArray(new Pattern[0]);
 	}
 	
 	private Pattern[] searchPatterns;

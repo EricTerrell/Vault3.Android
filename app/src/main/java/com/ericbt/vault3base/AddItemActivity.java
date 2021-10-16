@@ -28,7 +28,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -66,32 +65,26 @@ public class AddItemActivity extends Activity {
         
         okButton = (Button) findViewById(R.id.OKButton);
         
-        okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Intent returnData = new Intent();
-				returnData.putExtra(StringLiterals.Title, title.getEditableText().toString());
-				returnData.putExtra(StringLiterals.Text, text.getEditableText().toString());
-				returnData.putExtra(StringLiterals.AddAbove, addAboveRadioButton.isChecked());
-				returnData.putExtra(StringLiterals.DisplayHint, getIntent().getBooleanExtra(StringLiterals.DisplayHint, false));
-				returnData.putExtra(StringLiterals.SelectedOutlineItemId, getIntent().getIntExtra(StringLiterals.SelectedOutlineItemId, 0));
-				returnData.putExtra(StringLiterals.SelectedOutlineItemSortOrder, getIntent().getIntExtra(StringLiterals.SelectedOutlineItemSortOrder, 0));
-				returnData.putExtra(StringLiterals.SelectedOutlineItemParentId, getIntent().getIntExtra(StringLiterals.SelectedOutlineItemParentId, 1));
-				setResult(RESULT_OK, returnData);
+        okButton.setOnClickListener(v -> {
+			Intent returnData = new Intent();
+			returnData.putExtra(StringLiterals.Title, title.getEditableText().toString());
+			returnData.putExtra(StringLiterals.Text, text.getEditableText().toString());
+			returnData.putExtra(StringLiterals.AddAbove, addAboveRadioButton.isChecked());
+			returnData.putExtra(StringLiterals.DisplayHint, getIntent().getBooleanExtra(StringLiterals.DisplayHint, false));
+			returnData.putExtra(StringLiterals.SelectedOutlineItemId, getIntent().getIntExtra(StringLiterals.SelectedOutlineItemId, 0));
+			returnData.putExtra(StringLiterals.SelectedOutlineItemSortOrder, getIntent().getIntExtra(StringLiterals.SelectedOutlineItemSortOrder, 0));
+			returnData.putExtra(StringLiterals.SelectedOutlineItemParentId, getIntent().getIntExtra(StringLiterals.SelectedOutlineItemParentId, 1));
+			setResult(RESULT_OK, returnData);
 
-				finish();
-			}
-        });
+			finish();
+		});
 
         Button cancelButton = (Button) findViewById(R.id.CancelButton);
         
-        cancelButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setResult(RESULT_CANCELED);
-                finish();
-            }
-        });
+        cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
+		});
         
         boolean aboveOrBelowPrompt = getIntent().getBooleanExtra(StringLiterals.AboveOrBelowPrompt, false);
         

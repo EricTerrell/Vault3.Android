@@ -26,7 +26,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -64,23 +63,15 @@ public class SearchResultsArrayAdapter extends ArrayAdapter<SearchHit> {
         TextView textView = (TextView) convertView.findViewById(textViewResourceId);
     	textView.setText(searchHit.getHit().getTitle());
     	
-    	textView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(SearchResultsArrayAdapter.this.getContext(), TextActivity.class);
-                TextActivity.addTextData(searchHit.getHit(), intent, false);
-                SearchResultsArrayAdapter.this.getContext().startActivity(intent);
-            }
+    	textView.setOnClickListener(view -> {
+            Intent intent = new Intent(SearchResultsArrayAdapter.this.getContext(), TextActivity.class);
+            TextActivity.addTextData(searchHit.getHit(), intent, false);
+            SearchResultsArrayAdapter.this.getContext().startActivity(intent);
         });
 
         ImageView viewList = (ImageView) convertView.findViewById(R.id.view_list);
 
-        viewList.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                searchActivity.goToList(searchHit.getParent().getId());
-            }
-        });
+        viewList.setOnClickListener(v -> searchActivity.goToList(searchHit.getParent().getId()));
 
         return convertView;
 	}

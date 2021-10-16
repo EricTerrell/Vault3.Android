@@ -3,7 +3,6 @@ package com.ericbt.vault3base;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.widget.EditText;
 
 /*
@@ -29,36 +28,33 @@ This file is part of Vault 3.
 public class PasswordUI {
 	public static InputFilter createPasswordInputFilter() {
         // http://stackoverflow.com/questions/3349121/how-do-i-use-inputfilter-to-limit-characters-in-an-edittext-in-android
-        return new InputFilter() {
-			@Override
-			public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-		        if (source instanceof SpannableStringBuilder) {
-		            SpannableStringBuilder sourceAsSpannableBuilder = (SpannableStringBuilder) source;
-		            
-		            for (int i = end - 1; i >= start; i--) { 
-		                char currentChar = source.charAt(i);
-		                
-		                 if (!isValid(currentChar)) {    
-		                     sourceAsSpannableBuilder.delete(i, i + 1);
-		                 }     
-		            }
-		            
-		            return source;
-		        } else {
-		            StringBuilder filteredStringBuilder = new StringBuilder();
-		            
-		            for (int i = start; i < end; i++) { 
-		                char currentChar = source.charAt(i);
-		                
-		                if (isValid(currentChar)) {    
-		                    filteredStringBuilder.append(currentChar);
-		                }     
-		            }
-		            
-		            return filteredStringBuilder.toString();
-		        }
-		    }
-        };
+        return (source, start, end, dest, dstart, dend) -> {
+if (source instanceof SpannableStringBuilder) {
+SpannableStringBuilder sourceAsSpannableBuilder = (SpannableStringBuilder) source;
+
+for (int i = end - 1; i >= start; i--) {
+char currentChar = source.charAt(i);
+
+if (!isValid(currentChar)) {
+sourceAsSpannableBuilder.delete(i, i + 1);
+}
+}
+
+return source;
+} else {
+StringBuilder filteredStringBuilder = new StringBuilder();
+
+for (int i = start; i < end; i++) {
+char currentChar = source.charAt(i);
+
+if (isValid(currentChar)) {
+filteredStringBuilder.append(currentChar);
+}
+}
+
+return filteredStringBuilder.toString();
+}
+};
 	}
 	
 	private static boolean isValid(char ch) {

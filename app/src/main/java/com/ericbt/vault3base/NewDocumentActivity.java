@@ -24,8 +24,6 @@ import java.io.File;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -60,47 +58,36 @@ public class NewDocumentActivity extends Activity {
 
         final TextView errorMessage = (TextView) findViewById(R.id.ErrorMessage);
         
-        okButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				final String dbPath = String.format("%s/%s.vl3", VaultPreferenceActivity.getRootFolderPath(), newDocumentPath.getEditableText());
-				
-				File dbFile = new File(dbPath);
-				
-				if (dbFile.exists()) {
-					AlertDialog.Builder fileExistsAlertDialogBuilder = new AlertDialog.Builder(NewDocumentActivity.this);
-					fileExistsAlertDialogBuilder.setTitle(String.format("New %s Document", StringLiterals.ProgramName));
-					fileExistsAlertDialogBuilder.setMessage(String.format("File %s already exists. Replace it with a new document?", dbFile));
-					
-					fileExistsAlertDialogBuilder.setPositiveButton("OK", new OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							createDatabase(dbPath);
-						}
-					});
-					
-					fileExistsAlertDialogBuilder.setNegativeButton("Cancel", null);
-					
-					AlertDialog fileExistsAlertDialog = fileExistsAlertDialogBuilder.create();
-					
-					fileExistsAlertDialog.show();
-				}
-				else {
-					Intent returnData = new Intent();
-					returnData.putExtra(StringLiterals.FilePath, dbPath);
-					setResult(RESULT_OK, returnData);
-					createDatabase(dbPath);
-				}
+        okButton.setOnClickListener(v -> {
+			final String dbPath = String.format("%s/%s.vl3", VaultPreferenceActivity.getRootFolderPath(), newDocumentPath.getEditableText());
+
+			File dbFile = new File(dbPath);
+
+			if (dbFile.exists()) {
+				AlertDialog.Builder fileExistsAlertDialogBuilder = new AlertDialog.Builder(NewDocumentActivity.this);
+				fileExistsAlertDialogBuilder.setTitle(String.format("New %s Document", StringLiterals.ProgramName));
+				fileExistsAlertDialogBuilder.setMessage(String.format("File %s already exists. Replace it with a new document?", dbFile));
+
+				fileExistsAlertDialogBuilder.setPositiveButton("OK", (dialog, which) -> createDatabase(dbPath));
+
+				fileExistsAlertDialogBuilder.setNegativeButton("Cancel", null);
+
+				AlertDialog fileExistsAlertDialog = fileExistsAlertDialogBuilder.create();
+
+				fileExistsAlertDialog.show();
+			}
+			else {
+				Intent returnData = new Intent();
+				returnData.putExtra(StringLiterals.FilePath, dbPath);
+				setResult(RESULT_OK, returnData);
+				createDatabase(dbPath);
 			}
 		});
         
-        cancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setResult(RESULT_CANCELED);
-                finish();
-            }
-        });
+        cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
+		});
         
         newDocumentPath.addTextChangedListener(new TextWatcher() {
 			@Override

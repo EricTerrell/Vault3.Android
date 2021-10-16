@@ -23,7 +23,6 @@ package com.ericbt.vault3base;
 import java.io.File;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -32,10 +31,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -69,28 +65,20 @@ public class FileActivity extends AsyncTaskActivity {
 		setTitle(String.format("%s - File", getString(R.string.app_name)));
 
 		searchForVaultFilesButton = (Button) findViewById(R.id.SearchForVaultFiles);
-		searchForVaultFilesButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				createRootFolderIfNecessary();
-				
-				if (rootFolderExists()) {
-					searchForVaultFiles();
-				}
-				else {
-					promptUserToSpecifyRootFolder();
-				}
+		searchForVaultFilesButton.setOnClickListener(v -> {
+			createRootFolderIfNecessary();
+
+			if (rootFolderExists()) {
+				searchForVaultFiles();
+			}
+			else {
+				promptUserToSpecifyRootFolder();
 			}
 		});
 		
 		cancelButton = (Button) findViewById(R.id.Cancel);
 		
-		cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				cancel();
-			}
-		});
+		cancelButton.setOnClickListener(v -> cancel());
 		
 		arrayAdapter = new FileArrayAdapter(this, R.layout.file_list, R.id.FileListTextView);
 		
@@ -101,55 +89,43 @@ public class FileActivity extends AsyncTaskActivity {
 				
 		vaultFilesListView.setAdapter(arrayAdapter);
 		
-		vaultFilesListView.setOnItemClickListener(new OnItemClickListener() {
-			@Override
-			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-				if (!enabled) {
-					cancel();
-				}
-				
-				Intent returnData = new Intent();
-				returnData.putExtra(StringLiterals.Action, StringLiterals.Load);
-				returnData.putExtra(StringLiterals.DBPath, (String) vaultFilesListView.getItemAtPosition(position));	
-				setResult(RESULT_OK, returnData);
-				finish();
+		vaultFilesListView.setOnItemClickListener((parent, view, position, id) -> {
+			if (!enabled) {
+				cancel();
 			}
+
+			Intent returnData = new Intent();
+			returnData.putExtra(StringLiterals.Action, StringLiterals.Load);
+			returnData.putExtra(StringLiterals.DBPath, (String) vaultFilesListView.getItemAtPosition(position));
+			setResult(RESULT_OK, returnData);
+			finish();
 		});
 
 		newButton = (Button) findViewById(R.id.New);
 		
-		newButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				createRootFolderIfNecessary();
+		newButton.setOnClickListener(v -> {
+			createRootFolderIfNecessary();
 
-                Intent intent = new Intent(FileActivity.this, NewDocumentActivity.class);
-                startActivityForResult(intent, NEW_DOCUMENT);     
-			}
+Intent intent = new Intent(FileActivity.this, NewDocumentActivity.class);
+startActivityForResult(intent, NEW_DOCUMENT);
 		});
 		
 		passwordButton = (Button) findViewById(R.id.Password);
 		
-		passwordButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Intent intent = new Intent(FileActivity.this, ChangePasswordActivity.class);
-				startActivityForResult(intent, CHANGE_PASSWORD);
-			}
+		passwordButton.setOnClickListener(v -> {
+			Intent intent = new Intent(FileActivity.this, ChangePasswordActivity.class);
+			startActivityForResult(intent, CHANGE_PASSWORD);
 		});
 		
 		currentDocument = (TextView) findViewById(R.id.CurrentDocument);
 
 		closeButton = (Button) findViewById(R.id.Close);
 		
-		closeButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Intent returnData = new Intent();
-				returnData.putExtra(StringLiterals.Action, StringLiterals.Close);
-				setResult(RESULT_OK, returnData);
-				finish();
-			}
+		closeButton.setOnClickListener(v -> {
+			Intent returnData = new Intent();
+			returnData.putExtra(StringLiterals.Action, StringLiterals.Close);
+			setResult(RESULT_OK, returnData);
+			finish();
 		});
 
 		createRootFolderIfNecessary();
@@ -237,17 +213,9 @@ public class FileActivity extends AsyncTaskActivity {
 		alertDialogBuilder.setTitle("Cannot Search");
 		alertDialogBuilder.setMessage("Turn off USB storage if it is on.\r\n\r\nPlease specify the Root Folder that will contain all your Vault 3 documents if you have not already done so.");
 		
-		alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				startActivity(new Intent(FileActivity.this, VaultPreferenceActivity.class));
-			}
-		});
+		alertDialogBuilder.setPositiveButton("OK", (dialog, which) -> startActivity(new Intent(FileActivity.this, VaultPreferenceActivity.class)));
 
-		alertDialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-			}
+		alertDialogBuilder.setNegativeButton("Cancel", (dialog, which) -> {
 		});
 		
 		alertDialogBuilder.create().show();

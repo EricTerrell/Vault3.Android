@@ -250,12 +250,9 @@ public class Vault3 extends AsyncTaskActivity {
 
 			Button upgradeButton = (Button) findViewById(R.id.UpgradeButton);
 
-			upgradeButton.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					Intent intent = new Intent(Vault3.this, UpgradeActivity.class);
-					startActivity(intent);
-				}
+			upgradeButton.setOnClickListener(v -> {
+				Intent intent = new Intent(Vault3.this, UpgradeActivity.class);
+				startActivity(intent);
 			});
 		}
 	}
@@ -564,22 +561,19 @@ public class Vault3 extends AsyncTaskActivity {
 			textFragment.update(true, currentOutlineItem);
 		}
 
-		parentTextView.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				if (textFragment != null) {
-					parentLayout.setBackgroundColor(Color.BLUE);
+		parentTextView.setOnClickListener(v -> {
+			if (textFragment != null) {
+				parentLayout.setBackgroundColor(Color.BLUE);
 
-					TextActivity.addTextData(currentOutlineItem, textFragment.getActivity().getIntent(), false);
-					textFragment.update(true, currentOutlineItem);
+				TextActivity.addTextData(currentOutlineItem, textFragment.getActivity().getIntent(), false);
+				textFragment.update(true, currentOutlineItem);
 
-					((NavigateArrayAdapter) getNavigateListView().getAdapter()).selectOutlineItem(currentOutlineItem);
-				}
-				else {
-					Intent intent = new Intent(Vault3.this, TextActivity.class);
-					TextActivity.addTextData(Vault3.this.navigateArrayAdapter.getOutlineItem(), intent, true);
-					startActivityForResult(intent, TEXT);
-				}
+				((NavigateArrayAdapter) getNavigateListView().getAdapter()).selectOutlineItem(currentOutlineItem);
+			}
+			else {
+				Intent intent = new Intent(Vault3.this, TextActivity.class);
+				TextActivity.addTextData(Vault3.this.navigateArrayAdapter.getOutlineItem(), intent, true);
+				startActivityForResult(intent, TEXT);
 			}
 		});
 	}

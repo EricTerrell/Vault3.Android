@@ -7,7 +7,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 import android.widget.EditText;
 
 // Based on http://www.codeproject.com/Tips/631965/Android-Edit-Text-with-Cross-Icon-x
@@ -40,33 +39,30 @@ public class ClearableEditText extends EditText {
 		setCompoundDrawables(searchIcon, null, viewSide.equals("right") ? x2
 				: null, null);
 
-		setOnTouchListener(new OnTouchListener() {
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				if (getCompoundDrawables()[viewSide.equals("left") ? 0 : 2] == null) {
-					return false;
-				}
-				if (event.getAction() != MotionEvent.ACTION_UP) {
-					v.performClick();
-					
-					return false;
-				}
-				// x pressed
-				if ((viewSide.equals("left") && event.getX() < getPaddingLeft()
-						+ x.getIntrinsicWidth())
-						|| (viewSide.equals("right") && event.getX() > getWidth()
-								- getPaddingRight() - x.getIntrinsicWidth())) {
-					Drawable x3 = viewMode.equals("never") ? null : viewMode
-							.equals("always") ? x
-							: viewMode.equals("editing") ? null : viewMode
-									.equals("unlessEditing") ? x : null;
-					setText("");
-					setCompoundDrawables(searchIcon, null,
-							viewSide.equals("right") ? x3 : null, null);
-				}
-				
+		setOnTouchListener((v, event) -> {
+			if (getCompoundDrawables()[viewSide.equals("left") ? 0 : 2] == null) {
 				return false;
 			}
+			if (event.getAction() != MotionEvent.ACTION_UP) {
+				v.performClick();
+
+				return false;
+			}
+			// x pressed
+			if ((viewSide.equals("left") && event.getX() < getPaddingLeft()
+					+ x.getIntrinsicWidth())
+					|| (viewSide.equals("right") && event.getX() > getWidth()
+							- getPaddingRight() - x.getIntrinsicWidth())) {
+				Drawable x3 = viewMode.equals("never") ? null : viewMode
+						.equals("always") ? x
+						: viewMode.equals("editing") ? null : viewMode
+								.equals("unlessEditing") ? x : null;
+				setText("");
+				setCompoundDrawables(searchIcon, null,
+						viewSide.equals("right") ? x3 : null, null);
+			}
+
+			return false;
 		});
 		addTextChangedListener(new TextWatcher() {
 			@Override

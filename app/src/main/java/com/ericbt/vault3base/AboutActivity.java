@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -29,24 +28,18 @@ public class AboutActivity extends Activity {
         upgrade.setVisibility(isFreeVersion ? View.VISIBLE : View.INVISIBLE);
         
         if (isFreeVersion) {
-        	upgrade.setOnClickListener(new OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					Intent intent = new Intent(AboutActivity.this, UpgradeActivity.class);
-					startActivity(intent);
-				}
+        	upgrade.setOnClickListener(v -> {
+				Intent intent = new Intent(AboutActivity.this, UpgradeActivity.class);
+				startActivity(intent);
 			});
         }
 		
 		Button readLicenseTermsButton = (Button) findViewById(R.id.ReadLicenseTerms);
 		
-		readLicenseTermsButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Intent intent = new Intent(AboutActivity.this, LicenseTermsActivity.class);
-				intent.putExtra(StringLiterals.AllowCancel, true);
-                startActivity(intent);
-			}
+		readLicenseTermsButton.setOnClickListener(v -> {
+			Intent intent = new Intent(AboutActivity.this, LicenseTermsActivity.class);
+			intent.putExtra(StringLiterals.AllowCancel, true);
+startActivity(intent);
 		});
 	
 		TextView version = (TextView) findViewById(R.id.Version);

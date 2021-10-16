@@ -51,30 +51,18 @@ public class FileUtils {
 	 * @throws IOException
 	 */
 	public static void copyFile(String srcPath, String destPath) throws IOException {
-		FileInputStream inputStream = null;
-		FileOutputStream outputStream = null;
-		
-		try {
-			inputStream = new FileInputStream(srcPath);
-			outputStream = new FileOutputStream(destPath);
-	    
-	        byte[] buffer = new byte[1024];
-	        int length;
-	        
-	        while ((length = inputStream.read(buffer)) > 0) {
-	            outputStream.write(buffer, 0, length);
-	        }
 
-	        outputStream.flush();
-		}
-		finally {
-			if (inputStream != null) {
-				inputStream.close();
+		try (final FileInputStream inputStream = new FileInputStream(srcPath);
+			 final FileOutputStream outputStream = new FileOutputStream(destPath)) {
+
+			final byte[] buffer = new byte[1024];
+			int length;
+
+			while ((length = inputStream.read(buffer)) > 0) {
+				outputStream.write(buffer, 0, length);
 			}
-			
-			if (outputStream != null) {
-				outputStream.close();
-			}
+
+			outputStream.flush();
 		}
 	}
 }

@@ -62,12 +62,7 @@ public class FileArrayAdapter extends ArrayAdapter<String> {
 
 		View display = convertView.findViewById(R.id.display);
 
-		display.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				v.performLongClick();
-			}
-		});
+		display.setOnClickListener(v -> v.performLongClick());
     	
         return convertView;
 	}

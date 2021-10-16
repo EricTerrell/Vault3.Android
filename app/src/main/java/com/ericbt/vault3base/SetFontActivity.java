@@ -28,7 +28,6 @@ import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
@@ -149,29 +148,23 @@ public class SetFontActivity extends Activity {
 
         Button okButton = (Button) findViewById(R.id.OKButton);
 		
-		okButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent returnData = new Intent();
-                returnData.putExtra(StringLiterals.NewFontName, SetFontActivity.this.typefaceName);
-                returnData.putExtra(StringLiterals.NewFontSizeInPoints, (float) SetFontActivity.this.sizeInPoints);
-                returnData.putExtra(StringLiterals.NewFontStyle, SetFontActivity.this.fontStyle);
-                returnData.putExtra(StringLiterals.NewFontColor, SetFontActivity.this.fontColor);
-                setResult(RESULT_OK, returnData);
+		okButton.setOnClickListener(v -> {
+			Intent returnData = new Intent();
+			returnData.putExtra(StringLiterals.NewFontName, SetFontActivity.this.typefaceName);
+			returnData.putExtra(StringLiterals.NewFontSizeInPoints, (float) SetFontActivity.this.sizeInPoints);
+			returnData.putExtra(StringLiterals.NewFontStyle, SetFontActivity.this.fontStyle);
+			returnData.putExtra(StringLiterals.NewFontColor, SetFontActivity.this.fontColor);
+			setResult(RESULT_OK, returnData);
 
-                finish();
-            }
-        });
+			finish();
+		});
 
         Button cancelButton = (Button) findViewById(R.id.CancelButton);
 		
-		cancelButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setResult(RESULT_CANCELED);
-                finish();
-            }
-        });
+		cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
+		});
 		
 		setUIForCurrentFontAndColor();
 	}

@@ -8,11 +8,8 @@ import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -56,21 +53,13 @@ public class ChangePasswordActivity extends Activity {
         
         forceUppercase.setChecked(VaultPreferenceActivity.getForceUppercasePasswords());
 
-        forceUppercase.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				updatePasswordInputType();
-			}
-		});
+        forceUppercase.setOnCheckedChangeListener((buttonView, isChecked) -> updatePasswordInputType());
 
 		showPassword = (CheckBox) findViewById(R.id.ShowPassword);
 
-		showPassword.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				VaultPreferenceActivity.putShowPasswords(isChecked);
-				updatePasswordInputType();
-			}
+		showPassword.setOnCheckedChangeListener((buttonView, isChecked) -> {
+			VaultPreferenceActivity.putShowPasswords(isChecked);
+			updatePasswordInputType();
 		});
 
 		showPassword.setChecked(VaultPreferenceActivity.getShowPasswords());
@@ -80,12 +69,7 @@ public class ChangePasswordActivity extends Activity {
         requirePassword.setChecked(Globals.getApplication().getVaultDocument().isEncrypted());
         requirePassword.setText(String.format("Require a password to access %s", Globals.getApplication().getVaultDocument().getDatabase().getPath()));
         
-        requirePassword.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				updateGUIWhenChangesAreMade();
-				}
-		});
+        requirePassword.setOnCheckedChangeListener((buttonView, isChecked) -> updateGUIWhenChangesAreMade());
         
         newPasswordEditText.addTextChangedListener(new TextWatcher() {
 			@Override
@@ -120,33 +104,27 @@ public class ChangePasswordActivity extends Activity {
         
         okButton = (Button) findViewById(R.id.OKButton);
         
-        okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				VaultPreferenceActivity.putUppercasePasswords(forceUppercase.isChecked());
-				
-				String newPassword = newPasswordEditText.getEditableText().toString().trim();
-				
-				if (forceUppercase.isChecked()) {
-					newPassword = newPassword.toUpperCase();
-				}
-				
-				Intent returnData = new Intent();
-				returnData.putExtra(StringLiterals.NewPassword, newPassword);
-				setResult(RESULT_OK, returnData);
-				finish();
+        okButton.setOnClickListener(v -> {
+			VaultPreferenceActivity.putUppercasePasswords(forceUppercase.isChecked());
+
+			String newPassword = newPasswordEditText.getEditableText().toString().trim();
+
+			if (forceUppercase.isChecked()) {
+				newPassword = newPassword.toUpperCase();
 			}
+
+			Intent returnData = new Intent();
+			returnData.putExtra(StringLiterals.NewPassword, newPassword);
+			setResult(RESULT_OK, returnData);
+			finish();
 		});
 
         Button cancelButton = (Button) findViewById(R.id.CancelButton);
         
-        cancelButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setResult(RESULT_CANCELED);
-                finish();
-            }
-        });
+        cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
+		});
 
 		updateGUIWhenChangesAreMade();
 	}

@@ -22,7 +22,6 @@ package com.ericbt.vault3base;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.widget.Button;
 
 public class Prompt {
@@ -48,19 +47,13 @@ public class Prompt {
 		alertDialogBuilder.setTitle(title);
 		alertDialogBuilder.setMessage(message);
 		
-		alertDialogBuilder.setPositiveButton(positiveButtonText, new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				promptDialog.dismiss();
-				
-				activity.finish();
-			}
+		alertDialogBuilder.setPositiveButton(positiveButtonText, (dialog, which) -> {
+			promptDialog.dismiss();
+
+			activity.finish();
 		});
 
-		alertDialogBuilder.setNegativeButton(negativeButtonText, new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-			}
+		alertDialogBuilder.setNegativeButton(negativeButtonText, (dialog, which) -> {
 		});
 		
 		promptDialog = alertDialogBuilder.create();

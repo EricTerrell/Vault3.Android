@@ -21,9 +21,7 @@
 package com.ericbt.vault3base;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -35,12 +33,8 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -64,21 +58,13 @@ public class PasswordPromptActivity extends Activity {
         
         forceUppercase.setChecked(VaultPreferenceActivity.getForceUppercasePasswords());
         
-        forceUppercase.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				PasswordUI.updatePasswordInputType(passwordEditText, forceUppercase.isChecked(), showPassword.isChecked());
-			}
-		});
+        forceUppercase.setOnCheckedChangeListener((buttonView, isChecked) -> PasswordUI.updatePasswordInputType(passwordEditText, forceUppercase.isChecked(), showPassword.isChecked()));
 
 		showPassword = (CheckBox) findViewById(R.id.ShowPassword);
 
-		showPassword.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				VaultPreferenceActivity.putShowPasswords(isChecked);
-				PasswordUI.updatePasswordInputType(passwordEditText, forceUppercase.isChecked(), showPassword.isChecked());
-			}
+		showPassword.setOnCheckedChangeListener((buttonView, isChecked) -> {
+			VaultPreferenceActivity.putShowPasswords(isChecked);
+			PasswordUI.updatePasswordInputType(passwordEditText, forceUppercase.isChecked(), showPassword.isChecked());
 		});
 
 		showPassword.setChecked(VaultPreferenceActivity.getShowPasswords());
@@ -97,61 +83,50 @@ public class PasswordPromptActivity extends Activity {
         final Button okButton = (Button) findViewById(R.id.OKButton);
         okButton.setEnabled(false);
         
-        okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				VaultPreferenceActivity.putUppercasePasswords(forceUppercase.isChecked());
-				
-				String passwordText = passwordEditText.getEditableText().toString().trim();
-				
-				if (forceUppercase.isChecked()) {
-					passwordText = passwordText.toUpperCase();
-				}
-				
-				try {
-					SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(getIntent().getExtras().getString(StringLiterals.DBPath), null);
-					VaultDocument vaultDocument = new VaultDocument(database);
-					
-					if (vaultDocument.setPassword(passwordText)) {
-						Intent returnData = new Intent();
-						returnData.putExtra(StringLiterals.DBPath, vaultDocument.getDatabase().getPath());
+        okButton.setOnClickListener(v -> {
+			VaultPreferenceActivity.putUppercasePasswords(forceUppercase.isChecked());
 
-						vaultDocument.close();
+			String passwordText = passwordEditText.getEditableText().toString().trim();
 
-						returnData.putExtra(StringLiterals.Password, passwordText);
-						setResult(RESULT_OK, returnData);
-						finish();
-					}
-					else {
-				        AlertDialog.Builder alertDialogBuilder = new Builder(PasswordPromptActivity.this);
-				        
-				        alertDialogBuilder.setTitle("Invalid Password");
-				        alertDialogBuilder.setMessage(String.format("You entered an incorrect password for %s.", vaultDocument.getDatabase().getPath()));
-				        
-				        alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialog, int which) {
-								passwordEditText.setText("");
-							}
-						});
-				        
-				        alertDialogBuilder.create().show();
-					}
+			if (forceUppercase.isChecked()) {
+				passwordText = passwordText.toUpperCase();
+			}
+
+			try {
+				SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(getIntent().getExtras().getString(StringLiterals.DBPath), null);
+				VaultDocument vaultDocument = new VaultDocument(database);
+
+				if (vaultDocument.setPassword(passwordText)) {
+					Intent returnData = new Intent();
+					returnData.putExtra(StringLiterals.DBPath, vaultDocument.getDatabase().getPath());
+
+					vaultDocument.close();
+
+					returnData.putExtra(StringLiterals.Password, passwordText);
+					setResult(RESULT_OK, returnData);
+					finish();
 				}
-				catch (Exception ex) {
-					Log.e(StringLiterals.LogTag, "PasswordPromptActivity", ex);
+				else {
+					Builder alertDialogBuilder = new Builder(PasswordPromptActivity.this);
+
+					alertDialogBuilder.setTitle("Invalid Password");
+					alertDialogBuilder.setMessage(String.format("You entered an incorrect password for %s.", vaultDocument.getDatabase().getPath()));
+
+					alertDialogBuilder.setPositiveButton("OK", (dialog, which) -> passwordEditText.setText(""));
+
+					alertDialogBuilder.create().show();
 				}
+			}
+			catch (Exception ex) {
+				Log.e(StringLiterals.LogTag, "PasswordPromptActivity", ex);
 			}
 		});
         
         final Button cancelButton = (Button) findViewById(R.id.CancelButton);
 
-        cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setResult(RESULT_CANCELED);
-				finish();
-			}
+        cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
 		});
         
 		passwordEditText.addTextChangedListener(new TextWatcher() {
@@ -174,17 +149,15 @@ public class PasswordPromptActivity extends Activity {
 		});
 
 		// Automatically submit when user types ENTER...
-		passwordEditText.setOnKeyListener(new OnKeyListener() {
-		    public boolean onKey(View v, int keyCode, KeyEvent event) {
-		    	boolean result = false;
-		    	
-		        if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER && okButton.isEnabled()) {
-		        	okButton.performClick();
-		        	result = true;
-		        }
-		        
-		        return result;
-		    }
+		passwordEditText.setOnKeyListener((v, keyCode, event) -> {
+			boolean result = false;
+
+			if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER && okButton.isEnabled()) {
+				okButton.performClick();
+				result = true;
+			}
+
+			return result;
 		});
 	}
 

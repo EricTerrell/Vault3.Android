@@ -27,7 +27,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -61,20 +60,17 @@ public class RenameDocumentActivity extends Activity {
         final Button okButton = (Button) findViewById(R.id.OKButton);
         okButton.setEnabled(false);
         
-        okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				String destinationPathString = String.format("%s/%s%s", 
-															 VaultPreferenceActivity.getRootFolderPath(), 
-															 destinationPath.getEditableText().toString().trim(), 
-															 StringLiterals.FileType); 
+        okButton.setOnClickListener(v -> {
+			String destinationPathString = String.format("%s/%s%s",
+														 VaultPreferenceActivity.getRootFolderPath(),
+														 destinationPath.getEditableText().toString().trim(),
+														 StringLiterals.FileType);
 
-				Intent returnData = new Intent();
-				returnData.putExtra(StringLiterals.OldFilePath, sourceFilePath);
-				returnData.putExtra(StringLiterals.NewFilePath, destinationPathString);
-				setResult(RESULT_OK, returnData);
-				finish();
-			}
+			Intent returnData = new Intent();
+			returnData.putExtra(StringLiterals.OldFilePath, sourceFilePath);
+			returnData.putExtra(StringLiterals.NewFilePath, destinationPathString);
+			setResult(RESULT_OK, returnData);
+			finish();
 		});
         
         final TextView errorMessage = (TextView) findViewById(R.id.ErrorMessage);
@@ -101,12 +97,9 @@ public class RenameDocumentActivity extends Activity {
 
         Button cancelButton = (Button) findViewById(R.id.CancelButton);
         
-        cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setResult(RESULT_CANCELED);
-				finish();
-			}
+        cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
 		});
 	}
 

@@ -24,8 +24,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -49,27 +47,21 @@ public class RemoveDocumentActivity extends Activity {
 
 		Button okButton = (Button) findViewById(R.id.OKButton);
 
-		okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				boolean removedCurrentDocument = VaultDocument.closeCurrentDocumentWhenDeletedOrRenamed(filePath);
-				
-				Intent returnData = new Intent();
-				returnData.putExtra(StringLiterals.Action, removedCurrentDocument ? StringLiterals.RemoveCurrentDocument : StringLiterals.RemoveDocument);
-				returnData.putExtra(StringLiterals.FilePath, filePath);	
-				setResult(RESULT_OK, returnData);
-				finish();
-			}
+		okButton.setOnClickListener(v -> {
+			boolean removedCurrentDocument = VaultDocument.closeCurrentDocumentWhenDeletedOrRenamed(filePath);
+
+			Intent returnData = new Intent();
+			returnData.putExtra(StringLiterals.Action, removedCurrentDocument ? StringLiterals.RemoveCurrentDocument : StringLiterals.RemoveDocument);
+			returnData.putExtra(StringLiterals.FilePath, filePath);
+			setResult(RESULT_OK, returnData);
+			finish();
 		});
 		
 		Button cancelButton = (Button) findViewById(R.id.CancelButton);
 		
-		cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setResult(RESULT_CANCELED);
-				finish();
-			}
+		cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
 		});
 	}
 

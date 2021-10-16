@@ -34,35 +34,31 @@ import android.util.Log;
 public class CustomUncaughtExceptionHandler implements UncaughtExceptionHandler {
 	@Override
 	public void uncaughtException(Thread thread, Throwable tr) {
-		String logMessage = String.format("CustomUncaughtExceptionHandler.uncaughtException: Thread %d Message %s", thread.getId(), tr.getMessage());
+		String logMessage = String.format(
+				"CustomUncaughtExceptionHandler.uncaughtException: Thread %d Message %s",
+				thread.getId(),
+				tr.getMessage());
 
 		Log.e(StringLiterals.LogTag, logMessage);
-		
-		logMessage = String.format("%s\r\n\r\nThread: %d\r\n\r\nMessage:\r\n\r\n%s\r\n\r\nStack Trace:\r\n\r\n%s",
-				   new Date(), 
-				   thread.getId(), 
-				   tr.getMessage(), 
-				   Log.getStackTraceString(tr));
+
+		logMessage = String.format(
+				"%s\r\n\r\nThread: %d\r\n\r\nMessage:\r\n\r\n%s\r\n\r\nStack Trace:\r\n\r\n%s",
+				new Date(),
+				thread.getId(),
+				tr.getMessage(),
+				Log.getStackTraceString(tr));
 
 		Log.e(StringLiterals.LogTag, logMessage);
 
 		tr.printStackTrace();
-		
-		PrintWriter printWriter = null;
 
-		try {
-			printWriter = new PrintWriter(new FileWriter(VaultPreferenceActivity.getExceptionLogFilePath(), true));
+		try (PrintWriter printWriter = new PrintWriter(
+				new FileWriter(VaultPreferenceActivity.getExceptionLogFilePath(), true))) {
 
 			printWriter.print(logMessage);
 			printWriter.print("\n\n---------------------------------------------------------------------------\n\n");
-		}
-		catch (Throwable tr2) {
+		} catch (Throwable tr2) {
 			tr2.printStackTrace();
-		}
-		finally {
-			if (printWriter != null) {
-				printWriter.close();
-			}
 		}
 	}
 }

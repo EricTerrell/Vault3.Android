@@ -28,8 +28,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -77,12 +75,9 @@ public class SearchActivity extends AsyncTaskActivity {
 		
 		searchOptions = (Button) findViewById(R.id.SearchOptions);
 		
-		searchOptions.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Intent intent = new Intent(SearchActivity.this, SearchOptionsActivity.class);
-                startActivity(intent);     
-			}
+		searchOptions.setOnClickListener(v -> {
+			Intent intent = new Intent(SearchActivity.this, SearchOptionsActivity.class);
+startActivity(intent);
 		});
 		
 		search = new Search();
@@ -108,38 +103,28 @@ public class SearchActivity extends AsyncTaskActivity {
 		});
 
 		// Initiate a search when user types ENTER.
-		searchText.setOnKeyListener(new OnKeyListener() {
-		    public boolean onKey(View v, int keyCode, KeyEvent event) {
-		    	boolean result = false;
-		    	
-		        // If the event is a key-down event on the "enter" button
-		        if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER && searchButton.isEnabled() && searchButton.getVisibility() == View.VISIBLE) {
-		        	searchButton.performClick();
-		        	result = true;
-		        }
-		        
-		        return result;
-		    }
+		searchText.setOnKeyListener((v, keyCode, event) -> {
+			boolean result = false;
+
+			// If the event is a key-down event on the "enter" button
+			if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER && searchButton.isEnabled() && searchButton.getVisibility() == View.VISIBLE) {
+				searchButton.performClick();
+				result = true;
+			}
+
+			return result;
 		});
 		
 		enableSearchButton(true);
 		
-		searchButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				doSearch();
-			}
-		});
+		searchButton.setOnClickListener(v -> doSearch());
 		
-		cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				redoSearchOnResume = false;
+		cancelButton.setOnClickListener(v -> {
+			redoSearchOnResume = false;
 
-				if (searchTask != null) {
-					searchTask.cancel(true);
-					searchTask = null;
-				}
+			if (searchTask != null) {
+				searchTask.cancel(true);
+				searchTask = null;
 			}
 		});
 

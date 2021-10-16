@@ -23,8 +23,6 @@ package com.ericbt.vault3base;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Spinner;
@@ -77,33 +75,25 @@ public class SearchOptionsActivity extends Activity {
         
         Button okButton = (Button) findViewById(R.id.OKButton);
        
-        okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				VaultPreferenceActivity.setSearchScope(searchScope.getSelectedItemPosition() == 0 ? Search.SearchScope.SelectedOnly : Search.SearchScope.All);
-				VaultPreferenceActivity.setSearchFields(searchFields.getSelectedItemPosition() == 0 ? Search.SearchFields.Titles : Search.SearchFields.TitlesAndText);
-				VaultPreferenceActivity.setSearchMustFind(mustFind.getSelectedItemPosition() == 0 ? Search.MustFind.AtLeastOneWordOrPhrase : Search.MustFind.AllWordsAndPhrases);
-				
-				VaultPreferenceActivity.setSearchMatchWholeWorlds(matchWholeWords.isChecked());
-				VaultPreferenceActivity.setSearchMatchCase(matchCase.isChecked());
+        okButton.setOnClickListener(v -> {
+			VaultPreferenceActivity.setSearchScope(searchScope.getSelectedItemPosition() == 0 ? SearchScope.SelectedOnly : SearchScope.All);
+			VaultPreferenceActivity.setSearchFields(searchFields.getSelectedItemPosition() == 0 ? SearchFields.Titles : SearchFields.TitlesAndText);
+			VaultPreferenceActivity.setSearchMustFind(mustFind.getSelectedItemPosition() == 0 ? MustFind.AtLeastOneWordOrPhrase : MustFind.AllWordsAndPhrases);
 
-				int maxSearchHits = Integer.valueOf((String) maxSearchHitsSpinner.getSelectedItem());
-				VaultPreferenceActivity.setMaxSearchHits(maxSearchHits);
-				
-				VaultPreferenceActivity.setSortSearchResults(sortSearchResults.isChecked());
-				
-				finish();
-			}
+			VaultPreferenceActivity.setSearchMatchWholeWorlds(matchWholeWords.isChecked());
+			VaultPreferenceActivity.setSearchMatchCase(matchCase.isChecked());
+
+			int maxSearchHits1 = Integer.valueOf((String) maxSearchHitsSpinner.getSelectedItem());
+			VaultPreferenceActivity.setMaxSearchHits(maxSearchHits1);
+
+			VaultPreferenceActivity.setSortSearchResults(sortSearchResults.isChecked());
+
+			finish();
 		});
         
         Button cancelButton = (Button) findViewById(R.id.CancelButton);
         
-        cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				finish();
-			}
-		});
+        cancelButton.setOnClickListener(v -> finish());
 	}
 
 	@Override

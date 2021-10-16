@@ -22,12 +22,9 @@ package com.ericbt.vault3base;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.RadioButton;
 
@@ -57,39 +54,33 @@ public class LicenseTermsActivity extends Activity {
 		
 		Button okButton = (Button) findViewById(R.id.OKButton);
 
-		okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				final boolean userAcceptedTerms = acceptLicenseTerms.isChecked();
-				
-				VaultPreferenceActivity.putUserAcceptedTerms(userAcceptedTerms);
-				
-				if (!userAcceptedTerms) {
-					AlertDialog.Builder userRejectedTermsDialogBuilder = new AlertDialog.Builder(LicenseTermsActivity.this);
-					userRejectedTermsDialogBuilder.setTitle(String.format("Rejected %s License Terms", StringLiterals.ProgramName));
-					userRejectedTermsDialogBuilder.setMessage(String.format("You rejected the %s license terms. Please uninstall %s immediately.", StringLiterals.ProgramName, StringLiterals.ProgramName));
-					userRejectedTermsDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							alertDialog.dismiss();
-							
-							finish();
-							
-							Intent intent = new Intent(getApplicationContext(), Vault3.class);
-						    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-						    intent.putExtra("EXIT", true);
-						    startActivity(intent);
-						}
-					});
-					
-					userRejectedTermsDialogBuilder.setCancelable(false);
-					
-					alertDialog = userRejectedTermsDialogBuilder.create();
-					alertDialog.show();
-				}
-				else {
+		okButton.setOnClickListener(v -> {
+			final boolean userAcceptedTerms = acceptLicenseTerms.isChecked();
+
+			VaultPreferenceActivity.putUserAcceptedTerms(userAcceptedTerms);
+
+			if (!userAcceptedTerms) {
+				AlertDialog.Builder userRejectedTermsDialogBuilder = new AlertDialog.Builder(LicenseTermsActivity.this);
+				userRejectedTermsDialogBuilder.setTitle(String.format("Rejected %s License Terms", StringLiterals.ProgramName));
+				userRejectedTermsDialogBuilder.setMessage(String.format("You rejected the %s license terms. Please uninstall %s immediately.", StringLiterals.ProgramName, StringLiterals.ProgramName));
+				userRejectedTermsDialogBuilder.setPositiveButton("OK", (dialog, which) -> {
+					alertDialog.dismiss();
+
 					finish();
-				}
+
+					Intent intent = new Intent(getApplicationContext(), Vault3.class);
+					intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+					intent.putExtra("EXIT", true);
+					startActivity(intent);
+				});
+
+				userRejectedTermsDialogBuilder.setCancelable(false);
+
+				alertDialog = userRejectedTermsDialogBuilder.create();
+				alertDialog.show();
+			}
+			else {
+				finish();
 			}
 		});
 	}

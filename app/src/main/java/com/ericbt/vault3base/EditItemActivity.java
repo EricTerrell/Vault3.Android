@@ -28,7 +28,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -66,38 +65,32 @@ public class EditItemActivity extends Activity {
         
         okButton = (Button) findViewById(R.id.OKButton);
         
-        okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				String currentTitleValue = title.getEditableText().toString();
-				String currentTextValue = text.getEditableText().toString();
-				
-				if (!currentTitleValue.equals(getIntent().getExtras().getString(StringLiterals.Title)) ||
-					!currentTextValue.equals(getIntent().getExtras().getString(StringLiterals.Text))) {
-					Intent returnData = new Intent();
-					returnData.putExtra(StringLiterals.Title, currentTitleValue);
-					returnData.putExtra(StringLiterals.Text, currentTextValue);
-					returnData.putExtra(StringLiterals.OutlineItemId, getIntent().getExtras().getInt(StringLiterals.OutlineItemId));
-					returnData.putExtra(StringLiterals.OutlineItemParentId, getIntent().getExtras().getInt(StringLiterals.OutlineItemParentId));
-					setResult(RESULT_OK, returnData);
-				}
-				else {
-					setResult(RESULT_CANCELED);
-				}
+        okButton.setOnClickListener(v -> {
+			String currentTitleValue = title.getEditableText().toString();
+			String currentTextValue = text.getEditableText().toString();
 
-				finish();
+			if (!currentTitleValue.equals(getIntent().getExtras().getString(StringLiterals.Title)) ||
+				!currentTextValue.equals(getIntent().getExtras().getString(StringLiterals.Text))) {
+				Intent returnData = new Intent();
+				returnData.putExtra(StringLiterals.Title, currentTitleValue);
+				returnData.putExtra(StringLiterals.Text, currentTextValue);
+				returnData.putExtra(StringLiterals.OutlineItemId, getIntent().getExtras().getInt(StringLiterals.OutlineItemId));
+				returnData.putExtra(StringLiterals.OutlineItemParentId, getIntent().getExtras().getInt(StringLiterals.OutlineItemParentId));
+				setResult(RESULT_OK, returnData);
 			}
-   		     });
+			else {
+				setResult(RESULT_CANCELED);
+			}
+
+			finish();
+		});
 
         Button cancelButton = (Button) findViewById(R.id.CancelButton);
         
-        cancelButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setResult(RESULT_CANCELED);
-                finish();
-            }
-        });
+        cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
+		});
         
 		okButton.setEnabled(false);
 		

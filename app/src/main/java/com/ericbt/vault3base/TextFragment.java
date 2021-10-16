@@ -159,59 +159,50 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
 
         edit = (Button) view.findViewById(R.id.Edit);
 
-        edit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(TextFragment.this.getActivity(), EditItemActivity.class);
-                intent.putExtra(StringLiterals.Title, titleText);
-                intent.putExtra(StringLiterals.Text, textText);
-                intent.putExtra(StringLiterals.OutlineItemId, TextFragment.this.getActivity().getIntent().getExtras().getInt(StringLiterals.OutlineItemId));
-                intent.putExtra(StringLiterals.OutlineItemParentId, TextFragment.this.getActivity().getIntent().getExtras().getInt(StringLiterals.OutlineItemParentId));
-                startActivityForResult(intent, EDIT_ITEM);
-            }
+        edit.setOnClickListener(v -> {
+            Intent intent = new Intent(TextFragment.this.getActivity(), EditItemActivity.class);
+            intent.putExtra(StringLiterals.Title, titleText);
+            intent.putExtra(StringLiterals.Text, textText);
+            intent.putExtra(StringLiterals.OutlineItemId, TextFragment.this.getActivity().getIntent().getExtras().getInt(StringLiterals.OutlineItemId));
+            intent.putExtra(StringLiterals.OutlineItemParentId, TextFragment.this.getActivity().getIntent().getExtras().getInt(StringLiterals.OutlineItemParentId));
+            startActivityForResult(intent, EDIT_ITEM);
         });
 
         sendEmail = (Button) view.findViewById(R.id.SendEmail);
 
-        sendEmail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Create the Intent
-                final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+        sendEmail.setOnClickListener(v -> {
+            // Create the Intent
+            final Intent emailIntent = new Intent(Intent.ACTION_SEND);
 
-                // Fill it with Data
-                emailIntent.setType("plain/text");
-                emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, TextFragment.this.getActivity().getIntent().getExtras().getString(StringLiterals.Title));
+            // Fill it with Data
+            emailIntent.setType("plain/text");
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, TextFragment.this.getActivity().getIntent().getExtras().getString(StringLiterals.Title));
 
-                String paidVersionURL = getResources().getString(R.string.email_download_url);
+            String paidVersionURL = getResources().getString(R.string.email_download_url);
 
-                String sentByVault3 = String.format("This email was sent to you by Vault 3. Download your copy from %s", paidVersionURL);
-                String text = String.format("%s\n\n%s", TextFragment.this.getActivity().getIntent().getExtras().getString(StringLiterals.Text), sentByVault3);
+            String sentByVault3 = String.format("This email was sent to you by Vault 3. Download your copy from %s", paidVersionURL);
+            String text = String.format("%s\n\n%s", TextFragment.this.getActivity().getIntent().getExtras().getString(StringLiterals.Text), sentByVault3);
 
-                emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, text);
+            emailIntent.putExtra(Intent.EXTRA_TEXT, text);
 
-                // Send it to the Activity-Chooser
-                startActivity(Intent.createChooser(emailIntent, "Send Email..."));
-            }
+            // Send it to the Activity-Chooser
+            startActivity(Intent.createChooser(emailIntent, "Send Email..."));
         });
 
         setFont = (Button) view.findViewById(R.id.SetFont);
 
-        setFont.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(TextFragment.this.getActivity(), SetFontActivity.class);
+        setFont.setOnClickListener(v -> {
+            Intent intent = new Intent(TextFragment.this.getActivity(), SetFontActivity.class);
 
-                intent.putExtra(StringLiterals.FontName, fontName);
-                intent.putExtra(StringLiterals.FontSizeInPoints, fontSize);
-                intent.putExtra(StringLiterals.FontStyle, fontStyle);
+            intent.putExtra(StringLiterals.FontName, fontName);
+            intent.putExtra(StringLiterals.FontSizeInPoints, fontSize);
+            intent.putExtra(StringLiterals.FontStyle, fontStyle);
 
-                intent.putExtra(StringLiterals.Red, red);
-                intent.putExtra(StringLiterals.Green, green);
-                intent.putExtra(StringLiterals.Blue, blue);
+            intent.putExtra(StringLiterals.Red, red);
+            intent.putExtra(StringLiterals.Green, green);
+            intent.putExtra(StringLiterals.Blue, blue);
 
-                startActivityForResult(intent, SET_FONT);
-            }
+            startActivityForResult(intent, SET_FONT);
         });
 
         return view;

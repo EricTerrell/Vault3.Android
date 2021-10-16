@@ -21,7 +21,6 @@
 package com.ericbt.vault3base;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 
 public class ExitPrompt {
 	private final Vault3 vault3Activity;
@@ -36,28 +35,22 @@ public class ExitPrompt {
 		alertDialogBuilder.setTitle("Exit");
 		alertDialogBuilder.setMessage(String.format("Exit %s?", StringLiterals.ProgramName));
 		
-		alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				if (!VaultPreferenceActivity.getCachePasswords()) {
-					if (Globals.getApplication().getVaultDocument() != null && 
-						Globals.getApplication().getVaultDocument().isEncrypted()) {
-						Globals.getApplication().setVaultDocument(null, ExitPrompt.this.vault3Activity);
-					}
-					
-					PasswordCache.clear();
+		alertDialogBuilder.setPositiveButton("OK", (dialog, which) -> {
+			if (!VaultPreferenceActivity.getCachePasswords()) {
+				if (Globals.getApplication().getVaultDocument() != null &&
+					Globals.getApplication().getVaultDocument().isEncrypted()) {
+					Globals.getApplication().setVaultDocument(null, ExitPrompt.this.vault3Activity);
 				}
-				
-				promptDialog.dismiss();
-				
-				vault3Activity.exit();
+
+				PasswordCache.clear();
 			}
+
+			promptDialog.dismiss();
+
+			vault3Activity.exit();
 		});
 
-		alertDialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-			}
+		alertDialogBuilder.setNegativeButton("Cancel", (dialog, which) -> {
 		});
 		
 		promptDialog = alertDialogBuilder.create();

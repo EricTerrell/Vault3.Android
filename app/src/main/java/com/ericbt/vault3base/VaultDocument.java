@@ -289,31 +289,31 @@ public class VaultDocument {
 	private OutlineItem getOutlineItem() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, VaultException {
 		return getOutlineItem(1);
 	}
-	
+
 	private String getVaultDocumentInfo(String name) {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
 		String value = null;
 
-		String[] columns = new String[] { TableAndColumnNames.VaultDocumentInfo.Value };
-		String selection = String.format("%s = '%s'", TableAndColumnNames.VaultDocumentInfo.Name, name);
-		
-		Cursor cursor = null;
-		
-		try {
-			cursor = database.query(TableAndColumnNames.VaultDocumentInfo.TableName, columns, selection, null, null, null, null);
+		final String[] columns = new String[] { TableAndColumnNames.VaultDocumentInfo.Value };
+		final String selection = String.format("%s = '%s'", TableAndColumnNames.VaultDocumentInfo.Name, name);
+
+		try (final Cursor cursor =
+					 database.query(
+							 TableAndColumnNames.VaultDocumentInfo.TableName,
+							 columns,
+							 selection,
+							 null,
+							 null,
+							 null,
+							 null)) {
 
 			if (cursor.moveToFirst()) {
 				value = cursor.getString(0);
 			}
 		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
-		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.getVaultDocumentInfo: %d ms", elapsedMilliseconds));
 
 		return value;
@@ -582,21 +582,13 @@ public class VaultDocument {
 
 		int parentID = -1;
 
-		Cursor cursor = null;
-		
-		try {
-			cursor = database.query(TableAndColumnNames.OutlineItem.TableName, 
-									new String[] { TableAndColumnNames.OutlineItem.ParentID }, 
-									String.format("%s = ?", TableAndColumnNames.OutlineItem.ID), 
-									new String[] { String.valueOf(id) }, null, null, null);
-			
+		try (Cursor cursor = database.query(TableAndColumnNames.OutlineItem.TableName,
+				new String[]{TableAndColumnNames.OutlineItem.ParentID},
+				String.format("%s = ?", TableAndColumnNames.OutlineItem.ID),
+				new String[]{String.valueOf(id)}, null, null, null)) {
+
 			if (cursor.moveToFirst()) {
 				parentID = cursor.getInt(0);
-			}
-		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
 			}
 		}
 		
@@ -885,22 +877,13 @@ public class VaultDocument {
 
 	private int getLastInsertRowID() throws VaultException {
 		int lastInsertRowID = -1;
-		
-		Cursor cursor = null;
-		
-		try {
-			cursor = database.rawQuery("SELECT last_insert_rowid()", null);
-			
+
+		try (final Cursor cursor =
+					 database.rawQuery("SELECT last_insert_rowid()", null)) {
 			if (cursor.moveToNext()) {
 				lastInsertRowID = cursor.getInt(0);
-			}
-			else {
+			} else {
 				throw new VaultException("VaultDocument.getLastInsertRowID: cannot retrieve new item id");
-			}
-		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
 			}
 		}
 		
@@ -913,7 +896,7 @@ public class VaultDocument {
 		database.beginTransaction();
 		
 		try {
-			String queryString = "UPDATE OutlineItem SET SortOrder = SortOrder + 1 WHERE ParentID = ? AND SortOrder > ?"; 
+			final String queryString = "UPDATE OutlineItem SET SortOrder = SortOrder + 1 WHERE ParentID = ? AND SortOrder > ?";
 			database.execSQL(queryString, new String[] { String.valueOf(parentID), String.valueOf(sortOrder) } );
 			
 			database.setTransactionSuccessful();
@@ -922,7 +905,7 @@ public class VaultDocument {
 			database.endTransaction();
 		}
 		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.createGapInSortOrder: %d ms", elapsedMilliseconds));
 	}
 
@@ -1230,45 +1213,37 @@ public class VaultDocument {
 			}
 		}
 
-		SQLiteDatabase db = null;
+		try (final SQLiteDatabase db =
+					 SQLiteDatabase.openOrCreateDatabase(dbFilePath, null)) {
+			db.execSQL("INSERT INTO \"android_metadata\" VALUES ('en_US')");
 
-		try {
-			db = SQLiteDatabase.openOrCreateDatabase(dbFilePath, null);
+			String createTable =
+					"CREATE TABLE VaultDocumentInfo(" +
+							"Name TEXT NOT NULL PRIMARY KEY, Value TEXT NOT NULL)";
+			db.execSQL(createTable);
 
-		    db.execSQL("INSERT INTO \"android_metadata\" VALUES ('en_US')");
-		    
-		    String createTable = 
-		    	"CREATE TABLE VaultDocumentInfo(" +
-		    	"Name TEXT NOT NULL PRIMARY KEY, Value TEXT NOT NULL)";
-		    db.execSQL(createTable);
-		    
-		    String maxVersion = VaultDocumentVersion.getLatestVaultDocumentVersion().toString();
-		    
-		    db.execSQL(String.format("INSERT INTO VaultDocumentInfo(Name, Value) VALUES('DocumentVersion', '%s')", maxVersion));
-		    db.execSQL("INSERT INTO VaultDocumentInfo(Name, Value) VALUES('Encrypted', '0')");
+			final String maxVersion = VaultDocumentVersion.getLatestVaultDocumentVersion().toString();
 
-		    createTable = 
-		    	"CREATE TABLE OutlineItem(" +
-		    	"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, Text TEXT, FontList TEXT," +
-		    	"Red INTEGER DEFAULT 0, Green INTEGER DEFAULT 0, Blue INTEGER DEFAULT 0," +
-		    	"PhotoPath TEXT, AllowScaling INTEGER DEFAULT 1, SortOrder INTEGER" +
-		    	")";
-		    			    
-		    db.execSQL(createTable);
-		    
-		    // Insert root OutlineItem.
-		    db.execSQL("INSERT INTO OutlineItem(Title, Text, ParentID, SortOrder) VALUES(\"\", \"\", 0, 0)");
-		    
-		    String createIndex = "CREATE INDEX ParentIDIndex ON OutlineItem(ParentID)";
-		    db.execSQL(createIndex);
-		}
-		finally {
-			if (db != null) {
-				db.close();
-			}
+			db.execSQL(String.format("INSERT INTO VaultDocumentInfo(Name, Value) VALUES('DocumentVersion', '%s')", maxVersion));
+			db.execSQL("INSERT INTO VaultDocumentInfo(Name, Value) VALUES('Encrypted', '0')");
+
+			createTable =
+					"CREATE TABLE OutlineItem(" +
+							"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, Text TEXT, FontList TEXT," +
+							"Red INTEGER DEFAULT 0, Green INTEGER DEFAULT 0, Blue INTEGER DEFAULT 0," +
+							"PhotoPath TEXT, AllowScaling INTEGER DEFAULT 1, SortOrder INTEGER" +
+							")";
+
+			db.execSQL(createTable);
+
+			// Insert root OutlineItem.
+			db.execSQL("INSERT INTO OutlineItem(Title, Text, ParentID, SortOrder) VALUES(\"\", \"\", 0, 0)");
+
+			final String createIndex = "CREATE INDEX ParentIDIndex ON OutlineItem(ParentID)";
+			db.execSQL(createIndex);
 		}
 		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.createNewVaultDocument: %d ms", elapsedMilliseconds));
 	}
 
@@ -1385,7 +1360,7 @@ public class VaultDocument {
 				}
 
 				isEncrypted = (action == ChangePasswordAction.addPassword || action == ChangePasswordAction.changePassword);
-				setVaultDocumentInfo(ENCRYPTED, String.valueOf(isEncrypted ? "1" : "0")); 
+				setVaultDocumentInfo(ENCRYPTED, isEncrypted ? "1" : "0");
 				
 				this.password = newPassword;
 				this.secretKey = encryptionSecretKey;

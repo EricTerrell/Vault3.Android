@@ -23,8 +23,6 @@ package com.ericbt.vault3base;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -51,22 +49,16 @@ public class RemoveOutlineItemActivity extends Activity {
 
 		Button okButton = (Button) findViewById(R.id.OKButton);
 
-		okButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setResult(RESULT_OK, getIntent());
-				finish();
-			}
+		okButton.setOnClickListener(v -> {
+			setResult(RESULT_OK, getIntent());
+			finish();
 		});
 		
 		Button cancelButton = (Button) findViewById(R.id.CancelButton);
 		
-		cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setResult(RESULT_CANCELED);
-				finish();
-			}
+		cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
 		});
 	}
 

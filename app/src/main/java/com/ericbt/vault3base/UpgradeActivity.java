@@ -26,7 +26,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 
 public class UpgradeActivity extends Activity {
@@ -45,41 +44,33 @@ public class UpgradeActivity extends Activity {
         upgrade.setEnabled(isFreeVersion);
         upgrade.setVisibility(isFreeVersion ? View.VISIBLE : View.INVISIBLE);
         
-    	upgrade.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				try {
-					String appStore = getResources().getString(R.string.app_store);
-					
-					if (!appStore.equals("BN")) {
-						String paidVersionURL = getResources().getString(R.string.paid_version_url);
-						Log.i(StringLiterals.LogTag, String.format("UpgradeDialog.show: paidVersionURL: %s", paidVersionURL));
-						
-						Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(paidVersionURL));
-						startActivity(intent);
-					}
-					else {
-						String ean = getResources().getString(R.string.bn_EAN);
+    	upgrade.setOnClickListener(v -> {
+			try {
+				String appStore = getResources().getString(R.string.app_store);
 
-					    Intent intent = new Intent();
-					    intent.setAction("com.bn.sdk.shop.details"); 
-					    intent.putExtra("product_details_ean", ean);
-					    startActivity(intent);
-					}
+				if (!appStore.equals("BN")) {
+					String paidVersionURL = getResources().getString(R.string.paid_version_url);
+					Log.i(StringLiterals.LogTag, String.format("UpgradeDialog.show: paidVersionURL: %s", paidVersionURL));
+
+					Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(paidVersionURL));
+					startActivity(intent);
 				}
-				catch (Throwable ex) {
-					Log.e(StringLiterals.LogTag, String.format("UpgradeDialog.show exception: %s", ex.getMessage()));
+				else {
+					String ean = getResources().getString(R.string.bn_EAN);
+
+					Intent intent = new Intent();
+					intent.setAction("com.bn.sdk.shop.details");
+					intent.putExtra("product_details_ean", ean);
+					startActivity(intent);
 				}
+			}
+			catch (Throwable ex) {
+				Log.e(StringLiterals.LogTag, String.format("UpgradeDialog.show exception: %s", ex.getMessage()));
 			}
 		});
 		
     	Button cancelButton = (Button) findViewById(R.id.CancelButton);
     	
-    	cancelButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				finish();
-			}
-		});
+    	cancelButton.setOnClickListener(v -> finish());
 	}
 }

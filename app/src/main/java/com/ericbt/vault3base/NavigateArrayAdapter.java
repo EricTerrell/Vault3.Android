@@ -25,7 +25,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -96,48 +95,37 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 
 		convertView.setBackgroundColor(outlineItem.isSelected() ? Color.BLUE : Color.BLACK);
 
-    	textView.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Vault3 vault3 = (Vault3) NavigateArrayAdapter.this.getContext();
+    	textView.setOnClickListener(v -> {
+			Vault3 vault3 = (Vault3) NavigateArrayAdapter.this.getContext();
 
-				if (vault3.getTextFragment() != null) {
-					if (vault3.getParentLayout().isEnabled()) {
-						vault3.getParentLayout().setBackgroundColor(Color.DKGRAY);
-					}
+			if (vault3.getTextFragment() != null) {
+				if (vault3.getParentLayout().isEnabled()) {
+					vault3.getParentLayout().setBackgroundColor(Color.DKGRAY);
+				}
 
-					selectOutlineItem(outlineItem);
-					TextActivity.addTextData(outlineItem, vault3.getTextFragment().getActivity().getIntent(), false);
-					vault3.getTextFragment().update(true, outlineItem);
-				}
-				else {
-					Intent intent = new Intent(getContext(), TextActivity.class);
-					TextActivity.addTextData(outlineItem, intent, false);
-					vault3.startActivityForResult(intent, Vault3.TEXT);
-				}
+				selectOutlineItem(outlineItem);
+				TextActivity.addTextData(outlineItem, vault3.getTextFragment().getActivity().getIntent(), false);
+				vault3.getTextFragment().update(true, outlineItem);
+			}
+			else {
+				Intent intent = new Intent(getContext(), TextActivity.class);
+				TextActivity.addTextData(outlineItem, intent, false);
+				vault3.startActivityForResult(intent, Vault3.TEXT);
 			}
 		});
 
-		textView.setOnLongClickListener(new View.OnLongClickListener() {
-			@Override
-			public boolean onLongClick(View v) {
-				return false;
-			}
-		});
+		textView.setOnLongClickListener(v -> false);
 
-		imageView.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				if (outlineItem.getHasChildren()) {
-					int firstVisibleItemPos = ((Vault3) getContext()).getNavigateListView().getFirstVisiblePosition();
+		imageView.setOnClickListener(v -> {
+			if (outlineItem.getHasChildren()) {
+				int firstVisibleItemPos = ((Vault3) getContext()).getNavigateListView().getFirstVisiblePosition();
 
-					((Vault3) getContext()).saveScrollPosition(outlineItem.getParentId(), firstVisibleItemPos);
+				((Vault3) getContext()).saveScrollPosition(outlineItem.getParentId(), firstVisibleItemPos);
 
-					((Vault3) getContext()).enable(false);
+				((Vault3) getContext()).enable(false);
 
-					UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItem.getId(), ((Vault3) getContext()));
-					new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
-				}
+				UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItem.getId(), ((Vault3) getContext()));
+				new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
 			}
 		});
 
@@ -146,12 +134,7 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 		if (VaultPreferenceActivity.getDisplayWrenchIcon()) {
 			build.setVisibility(View.VISIBLE);
 
-			build.setOnClickListener(new OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					v.performLongClick();
-				}
-			});
+			build.setOnClickListener(v -> v.performLongClick());
 		}
 		else {
 			build.setVisibility(View.GONE);
