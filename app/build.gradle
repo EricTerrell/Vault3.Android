@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     defaultConfig {
         applicationId "com.ericbt.vault3base"
-        minSdkVersion 15
-        targetSdkVersion 29
+        minSdkVersion 26
+        targetSdkVersion 30
     }
     buildTypes {
         release {
@@ -37,4 +37,5 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation files('libs/CommonCode.jar')
     implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'androidx.documentfile:documentfile:1.0.1'
 }

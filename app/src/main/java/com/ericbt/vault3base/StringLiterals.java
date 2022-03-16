@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -23,8 +23,6 @@ package com.ericbt.vault3base;
 public class StringLiterals {
 	public static final String ProgramName                  = "Vault 3";
 	public static final String FullProgramName              = "Vault 3 for Android";
-	public static final String SupportURL                   = "http://ericbt.com/Vault3/Donate";
-	public static final String HomePageURL                  = "http://www.EricBT.com";
 	public static final String LogTag                       = "Vault 3";
 	public static final String FileType                     = ".vl3";
 	
@@ -49,9 +47,6 @@ public class StringLiterals {
 	public static final String Password                     = "Password";
 	public static final String Above                        = "above";
 	public static final String NewPassword                  = "NewPassword";
-	public static final String OldFilePath                  = "OldFilePath";
-	public static final String NewFilePath                  = "NewFilePath";
-	public static final String SourceFilePath               = "SourceFilePath";
 	public static final String ExceptionMessage             = "ExceptionMessage";
 	public static final String FontName                     = "FontName";
 	public static final String NewFontName                  = "NewFontName";
@@ -62,16 +57,10 @@ public class StringLiterals {
 	public static final String Red                          = "Red";
 	public static final String Green                        = "Green";
 	public static final String Blue                         = "Blue";
-	public static final String NewRed                       = "NewRed";
-	public static final String NewGreen                     = "NewGreen";
-	public static final String NewBlue                      = "NewBlue";
-	public static final String FontColor                    = "FontColor";
 	public static final String NewFontColor                 = "NewFontColor";
 	public static final String FontList                     = "FontList";
-	public static final String DestinationFilePath          = "DestinationFilePath";
 	public static final String RedoSearchOnResume           = "RedoSearchOnResume";
 	public static final String AllowCancel                  = "ALLOW_CANCEL";
-	public static final String RequestPermissions           = "Request Permissions";
-	public static final String OK                           = "OK";
-	public static final String Cancel                       = "Cancel";
+	public static final String DocumentUri                  = "DocumentUri";
+	public static final String EmptyString                  = "";
 }

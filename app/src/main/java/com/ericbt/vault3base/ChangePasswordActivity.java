@@ -13,6 +13,8 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.File;
+
 public class ChangePasswordActivity extends Activity {
 	private EditText newPasswordEditText, newPasswordAgainEditText;
 	private TextView errorMessage;
@@ -20,10 +22,10 @@ public class ChangePasswordActivity extends Activity {
 	private CheckBox requirePassword, forceUppercase, showPassword;
 	private Button okButton;
 
-    @Override
+	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		if (Globals.getApplication().getVaultDocument() == null) {
 			setResult(RESULT_CANCELED);
 			finish();
@@ -33,29 +35,29 @@ public class ChangePasswordActivity extends Activity {
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 
 		setContentView(R.layout.change_password_dialog);
-        
-        setTitle(String.format("%s: Change Password", getString(R.string.app_name)));
 
-        errorMessage = (TextView) findViewById(R.id.ErrorMessage);
-        errorMessage.setText(passwordToShortErrorMessage);
+		setTitle(String.format("%s: Change Password", getString(R.string.app_name)));
 
-        newPasswordEditText = (EditText) findViewById(R.id.NewPassword);
-        newPasswordAgainEditText = (EditText) findViewById(R.id.NewPasswordAgain);
-        
-        InputFilter[] inputFilters = new InputFilter[] { PasswordUI.createPasswordInputFilter() };
-        
-        newPasswordEditText.setFilters(inputFilters);
-        newPasswordAgainEditText.setFilters(inputFilters);
+		errorMessage = findViewById(R.id.ErrorMessage);
+		errorMessage.setText(passwordToShortErrorMessage);
 
-        requirePassword = (CheckBox) findViewById(R.id.RequirePassword);
-        
-        forceUppercase = (CheckBox) findViewById(R.id.ForceUppercasePassword);
-        
-        forceUppercase.setChecked(VaultPreferenceActivity.getForceUppercasePasswords());
+		newPasswordEditText = findViewById(R.id.NewPassword);
+		newPasswordAgainEditText = findViewById(R.id.NewPasswordAgain);
 
-        forceUppercase.setOnCheckedChangeListener((buttonView, isChecked) -> updatePasswordInputType());
+		InputFilter[] inputFilters = new InputFilter[]{PasswordUI.createPasswordInputFilter()};
 
-		showPassword = (CheckBox) findViewById(R.id.ShowPassword);
+		newPasswordEditText.setFilters(inputFilters);
+		newPasswordAgainEditText.setFilters(inputFilters);
+
+		requirePassword = findViewById(R.id.RequirePassword);
+
+		forceUppercase = findViewById(R.id.ForceUppercasePassword);
+
+		forceUppercase.setChecked(VaultPreferenceActivity.getForceUppercasePasswords());
+
+		forceUppercase.setOnCheckedChangeListener((buttonView, isChecked) -> updatePasswordInputType());
+
+		showPassword = findViewById(R.id.ShowPassword);
 
 		showPassword.setOnCheckedChangeListener((buttonView, isChecked) -> {
 			VaultPreferenceActivity.putShowPasswords(isChecked);
@@ -65,46 +67,47 @@ public class ChangePasswordActivity extends Activity {
 		showPassword.setChecked(VaultPreferenceActivity.getShowPasswords());
 
 		updatePasswordInputType();
-        
-        requirePassword.setChecked(Globals.getApplication().getVaultDocument().isEncrypted());
-        requirePassword.setText(String.format("Require a password to access %s", Globals.getApplication().getVaultDocument().getDatabase().getPath()));
-        
-        requirePassword.setOnCheckedChangeListener((buttonView, isChecked) -> updateGUIWhenChangesAreMade());
-        
-        newPasswordEditText.addTextChangedListener(new TextWatcher() {
+
+		requirePassword.setChecked(Globals.getApplication().getVaultDocument().isEncrypted());
+		requirePassword.setText(String.format("Require a password to access %s",
+				new File(Globals.getApplication().getVaultDocument().getDatabase().getPath()).getName()));
+
+		requirePassword.setOnCheckedChangeListener((buttonView, isChecked) -> updateGUIWhenChangesAreMade());
+
+		newPasswordEditText.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
 				updateGUIWhenChangesAreMade();
 			}
-			
+
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count,
-					int after) {
+										  int after) {
 			}
-			
+
 			@Override
 			public void afterTextChanged(Editable s) {
 			}
 		});
-        
-        newPasswordAgainEditText.addTextChangedListener(new TextWatcher() {
+
+		newPasswordAgainEditText.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
 				updateGUIWhenChangesAreMade();
 			}
-			
+
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 			}
-			
+
 			@Override
 			public void afterTextChanged(Editable s) {
 			}
 		});
-        
-        okButton = (Button) findViewById(R.id.OKButton);
-        
-        okButton.setOnClickListener(v -> {
+
+		okButton = findViewById(R.id.OKButton);
+
+		okButton.setOnClickListener(v -> {
 			VaultPreferenceActivity.putUppercasePasswords(forceUppercase.isChecked());
 
 			String newPassword = newPasswordEditText.getEditableText().toString().trim();
@@ -119,9 +122,9 @@ public class ChangePasswordActivity extends Activity {
 			finish();
 		});
 
-        Button cancelButton = (Button) findViewById(R.id.CancelButton);
-        
-        cancelButton.setOnClickListener(v -> {
+		Button cancelButton = findViewById(R.id.CancelButton);
+
+		cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);
 			finish();
 		});

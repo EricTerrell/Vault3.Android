@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,81 +20,68 @@
 
 package com.ericbt.vault3base;
 
-import java.io.File;
-
 import android.app.AlertDialog;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import androidx.documentfile.provider.DocumentFile;
+
+import java.util.Arrays;
+import java.util.Locale;
+
 public class FindVaultFilesTask extends AsyncTask<FindVaultFilesTaskParameters, String, FindVaultFilesTaskResult> {
 	private FindVaultFilesTaskParameters findVaultFilesTaskParameters;
-	
+
 	@Override
 	protected FindVaultFilesTaskResult doInBackground(FindVaultFilesTaskParameters... params) {
 		findVaultFilesTaskParameters = params[0];
-		
-		FindVaultFilesTaskResult result = new FindVaultFilesTaskResult();
-		
+
+		final FindVaultFilesTaskResult result = new FindVaultFilesTaskResult();
+
 		try {
-			getVaultFilePaths(VaultPreferenceActivity.getRootFolderPath());
-		}
-		catch (Throwable ex) {
+			final DocumentFile[] documentFiles = getFileList(
+					findVaultFilesTaskParameters.getFileActivity(),
+					findVaultFilesTaskParameters.getFolderUri());
+
+			result.setDocumentFiles(documentFiles);
+		} catch (Throwable ex) {
 			Log.e(StringLiterals.LogTag, String.format("FindVaultFilesTask: Exception %s", ex.getMessage()));
 			ex.printStackTrace();
-			
+
 			result.setException(ex);
 		}
-		
+
 		return result;
-	}
-
-	@Override
-	protected void onProgressUpdate(String... values) {
-		findVaultFilesTaskParameters.getFileActivity().update(values[0]);
-	}
-
-	@Override
-	protected void onCancelled() {
-		findVaultFilesTaskParameters.getFileActivity().enableForSearch(true);
 	}
 
 	@Override
 	protected void onPostExecute(FindVaultFilesTaskResult result) {
 		findVaultFilesTaskParameters.getFileActivity().setEnabled(true);
-		
+		findVaultFilesTaskParameters.getFileActivity().setSearching(false);
+
+		findVaultFilesTaskParameters.getFileActivity().updateFileList(result.getDocumentFiles());
+
 		if (result.getException() != null) {
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(findVaultFilesTaskParameters.getFileActivity());
-			alertDialogBuilder.setTitle(String.format("Search for %s Documents", StringLiterals.ProgramName));
-			alertDialogBuilder.setMessage("Cannot find documents.");
-			alertDialogBuilder.setPositiveButton("OK", null);
-			
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+			new AlertDialog.Builder(findVaultFilesTaskParameters.getFileActivity())
+					.setTitle(String.format("Search for %s Documents", StringLiterals.ProgramName))
+					.setMessage("Cannot find documents.")
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
 		}
 	}
 	
-	private void getVaultFilePaths(String rootFolderPath) {
-		File rootFolder = new File(rootFolderPath);
-		
-		if (rootFolder.isDirectory()) {
-			File[] list = rootFolder.listFiles();
-			
-			if (list != null && list.length > 0) {
-				for (File child : list) {
-					if (!isCancelled()) {
-						if (child.isFile()) {
-							String fileType = FileUtils.getFileType(child);
-							
-							if (fileType != null && fileType.equals(VaultDocument.VAULTFILETYPE)) {
-								publishProgress(child.getAbsolutePath());
-							}
-						}
-						else if (child.isDirectory()) {
-							getVaultFilePaths(child.getAbsolutePath());
-						}
-					}
-				}
-			}
-		}
+	private DocumentFile[] getFileList(FileActivity fileActivity, Uri folderUri) {
+		final DocumentFile[] documentFiles =
+				DocumentFile.fromTreeUri(fileActivity, folderUri).listFiles();
+
+		return Arrays.stream(documentFiles).filter(
+				documentFile ->
+						documentFile.getName()
+								.toLowerCase(Locale.ROOT)
+								.endsWith(StringLiterals.FileType))
+				.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
+				.toArray(DocumentFile[]::new);
 	}
 }

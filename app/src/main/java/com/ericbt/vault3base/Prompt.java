@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -31,8 +31,7 @@ public class Prompt {
     private final String positiveButtonText;
     private final String negativeButtonText;
 	private final int defaultButton;
-	private AlertDialog promptDialog;
-	
+
 	public Prompt(Activity activity, String title, String message, String positiveButtonText, String negativeButtonText, int defaultButton) {
 		this.activity = activity;
 		this.title = title;
@@ -41,27 +40,26 @@ public class Prompt {
 		this.negativeButtonText = negativeButtonText;
 		this.defaultButton = defaultButton;
 	}
-	
+
 	public void onBackPressed() {
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
-		alertDialogBuilder.setTitle(title);
-		alertDialogBuilder.setMessage(message);
-		
-		alertDialogBuilder.setPositiveButton(positiveButtonText, (dialog, which) -> {
-			promptDialog.dismiss();
+		final AlertDialog promptDialog =
+				new AlertDialog.Builder(activity)
+						.setTitle(title)
+						.setMessage(message)
+						.setPositiveButton(positiveButtonText, (dialog, which) -> {
+							dialog.dismiss();
 
-			activity.finish();
-		});
+							activity.finish();
+						})
+						.setNegativeButton(negativeButtonText, (dialog, which) -> {
+						})
+						.setCancelable(false)
+						.create();
 
-		alertDialogBuilder.setNegativeButton(negativeButtonText, (dialog, which) -> {
-		});
-		
-		promptDialog = alertDialogBuilder.create();
-		promptDialog.setCancelable(false);
 		promptDialog.show();
 
-		Button button = promptDialog.getButton(defaultButton);
-		
+		final Button button = promptDialog.getButton(defaultButton);
+
 		button.requestFocus();
 		button.setSelected(true);
 	}

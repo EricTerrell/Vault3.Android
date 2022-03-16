@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,7 +20,6 @@
 
 package com.ericbt.vault3base;
 
-import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -64,14 +63,14 @@ public class UpdateFontTask extends AsyncTask<UpdateFontTaskParameters, Void, Up
 			parameters.getTextDisplayUpdate().update(result.getOutlineItem());
 		}
 		else {
-			AlertDialog.Builder alertDialogBuilder = new Builder(parameters.getTextDisplayUpdate().getAsyncTaskActivity());
-			alertDialogBuilder.setTitle("Cannot Update Font");
-			
-			String message = String.format("Cannot update font: %s", result.getException().getMessage());
-			alertDialogBuilder.setMessage(message);
-			alertDialogBuilder.setPositiveButton("OK", null);
-			
-			alertDialogBuilder.create().show();
+			final String message = String.format("Cannot update font: %s", result.getException().getMessage());
+
+			new Builder(parameters.getTextDisplayUpdate().getAsyncTaskActivity())
+					.setTitle("Cannot Update Font")
+					.setMessage(message)
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
 		}
 	}
 

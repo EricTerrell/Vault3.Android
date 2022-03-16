@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -24,17 +24,20 @@ import android.app.AlertDialog;
 import android.os.AsyncTask;
 import android.util.Log;
 
-public class CopyDocumentTask extends AsyncTask<CopyDocumentTaskParameters, Void, CopyDocumentTaskResult> {
-	private CopyDocumentTaskParameters parameters;
+public class SaveChangesTask extends AsyncTask<SaveChangesTaskParameters, Void, SaveChangesTaskResult> {
+	private SaveChangesTaskParameters parameters;
 	
 	@Override
-	protected CopyDocumentTaskResult doInBackground(CopyDocumentTaskParameters... params) {
+	protected SaveChangesTaskResult doInBackground(SaveChangesTaskParameters... params) {
 		parameters = params[0];
 		
-		CopyDocumentTaskResult result = new CopyDocumentTaskResult();
+		final SaveChangesTaskResult result = new SaveChangesTaskResult();
 		
 		try {
-			FileUtils.copyFile(parameters.getSourceFilePath(), parameters.getDestFilePath());
+			DocumentFileUtils.updateDocumentFile(
+					parameters.getActivity(),
+					parameters.getCurrentDocumentName(),
+					parameters.getSourceFileUri());
 		} catch (Throwable ex) {
 			Log.e(StringLiterals.LogTag, String.format("CopyDocumentTask: Exception %s", ex.getMessage()));
 			ex.printStackTrace();
@@ -45,18 +48,21 @@ public class CopyDocumentTask extends AsyncTask<CopyDocumentTaskParameters, Void
 	}
 
 	@Override
-	protected void onPostExecute(CopyDocumentTaskResult result) {
-		parameters.getFileActivity().programmaticSearch();
-
+	protected void onPostExecute(SaveChangesTaskResult result) {
 		if (result.getException() != null) {
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getFileActivity());
-			alertDialogBuilder.setTitle("Copy Document");
-			alertDialogBuilder.setMessage(String.format("Cannot copy %s to %s", parameters.getSourceFilePath(), 
-														parameters.getDestFilePath()));
-			alertDialogBuilder.setPositiveButton("OK", null);
-			
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+			new AlertDialog.Builder(parameters.getActivity())
+					.setTitle("Save Changes")
+					.setMessage(String.format("Cannot save changes to %s: %s",
+					parameters.getCurrentDocumentName(),
+					result.getException().getMessage()))
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
+		}
+		else {
+			Globals.getApplication().getVaultDocument().setDirty(false);
+
+			parameters.getActivity().setEnabled(true);
 		}
 	}
 }

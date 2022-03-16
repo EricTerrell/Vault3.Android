@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -30,7 +30,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-public class FileArrayAdapter extends ArrayAdapter<String> {
+import androidx.documentfile.provider.DocumentFile;
+
+public class FileArrayAdapter extends ArrayAdapter<DocumentFile> {
 	private final Context context;
 	private final int resource;
 	private final int textViewResourceId;
@@ -53,9 +55,10 @@ public class FileArrayAdapter extends ArrayAdapter<String> {
         	convertView = infalInflater.inflate(resource, null);
         }
         
-        final String text = getItem(position);
+        final DocumentFile documentFile = getItem(position);
+		final String text = documentFile.getName();
 
-        TextView textView = (TextView) convertView.findViewById(textViewResourceId);
+        TextView textView = convertView.findViewById(textViewResourceId);
     	textView.setText(new File(text).getName());
     	
 		textView.setTextColor(enabled ? Color.WHITE : Color.DKGRAY);

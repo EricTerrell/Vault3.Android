@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,36 +21,24 @@
 package com.ericbt.vault3base;
 
 public class RGBColor {
-	private int red;
+	private final int red;
 	
 	public int getRed() {
 		return red;
 	}
 
-	public void setRed(int red) {
-		this.red = red;
-	}
-
-	private int green;
+	private final int green;
 
 	public int getGreen() {
 		return green;
 	}
 
-	public void setGreen(int green) {
-		this.green = green;
-	}
-
-	private int blue;
+	private final int blue;
 
 	public int getBlue() {
 		return blue;
 	}
 
-	public void setBlue(int blue) {
-		this.blue = blue;
-	}
-	
 	public RGBColor(int red, int green, int blue) {
 		this.red = red;
 		this.green = green;
@@ -63,7 +51,11 @@ public class RGBColor {
 
 	@Override
 	public boolean equals(Object obj) {
-		RGBColor rgbColor = (RGBColor) obj;
+		if (obj == null || getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final RGBColor rgbColor = (RGBColor) obj;
 		
 		return red == rgbColor.red && green == rgbColor.green && blue == rgbColor.blue;
 	}

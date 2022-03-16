@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -24,6 +24,8 @@ import android.app.AlertDialog;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import java.io.File;
+
 public class ChangePasswordTask extends AsyncTask<ChangePasswordTaskParameters, Void, ChangePasswordTaskResult> {
 	private ChangePasswordTaskParameters parameters;
 	
@@ -31,10 +33,19 @@ public class ChangePasswordTask extends AsyncTask<ChangePasswordTaskParameters, 
 	protected ChangePasswordTaskResult doInBackground(ChangePasswordTaskParameters... params) {
 		parameters = params[0];
 		
-		ChangePasswordTaskResult result = new ChangePasswordTaskResult();
+		final ChangePasswordTaskResult result = new ChangePasswordTaskResult();
 		
 		try {
+			// Change password in temp file.
 			Globals.getApplication().getVaultDocument().changePassword(parameters.getNewPassword());
+
+			final String fileName = new File(Globals.getApplication().getVaultDocument().getDatabase().getPath()).getName();
+
+			// Update corresponding document.
+			DocumentFileUtils.updateDocumentFile(
+					parameters.getFileActivity(),
+					fileName,
+					VaultPreferenceActivity.getSelectedFileUri());
 		}
 		catch (Throwable ex) {
 			Log.e(StringLiterals.LogTag, String.format("ChangePasswordTask: exception %s", ex.getMessage()));
@@ -46,23 +57,23 @@ public class ChangePasswordTask extends AsyncTask<ChangePasswordTaskParameters, 
 
 	@Override
 	protected void onPostExecute(ChangePasswordTaskResult result) {
-		String newPassword = parameters.getNewPassword();
-		
-		parameters.getFileActivity().setEnabled(true);
-		
+		final String newPassword = parameters.getNewPassword();
+
 		if (result.getException() == null) {
 			Globals.getApplication().getPasswordCache().put(Globals.getApplication().getVaultDocument().getDatabase().getPath(), newPassword);
-		}
-		else {
-			parameters.getFileActivity().setEnabled(true);
-			
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getFileActivity());
-			alertDialogBuilder.setTitle("Change Password");
-			alertDialogBuilder.setMessage("Cannot change password.");
-			alertDialogBuilder.setPositiveButton("OK", null);
-			
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+		} else {
+			new AlertDialog.Builder(parameters.getFileActivity())
+					.setTitle("Change Password")
+					.setMessage("Cannot change password.")
+					.setPositiveButton("OK", (dialog, which) -> {
+						dialog.dismiss();
+
+						parameters.getFileActivity().setEnabled(true);
+						parameters.getFileActivity().closeActiveDocument();
+					})
+					.setCancelable(false)
+					.create()
+					.show();
 		}
 	}
 }

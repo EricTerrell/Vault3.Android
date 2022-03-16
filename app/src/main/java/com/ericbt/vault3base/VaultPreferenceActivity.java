@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -24,6 +24,7 @@ import fonts.AndroidFont;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceFragment;
@@ -47,6 +48,8 @@ public class VaultPreferenceActivity extends Activity {
 	private static final String MatchCase                  = "MatchCase";
 	private static final String MaxSearchHits              = "MaxSearchHits";
 	private static final String SortSearchResultsKey       = "SortSearchResults";
+	private static final String FolderUriKey               = "FolderUri";
+	private static final String SelectedFileUriKey         = "SelectedFileUriKey";
 
 	private static final int defaultParentOutlineItemID   = -1;
 	private static final int defaultMaxSearchHits         = 25;
@@ -206,10 +209,6 @@ public class VaultPreferenceActivity extends Activity {
 
 	public static String getSearchText() {
 		return PreferenceManager.getDefaultSharedPreferences(Globals.getApplication().getApplicationContext()).getString(SearchText, defaultSearchText);
-	}
-	
-	public static int getDefaultParentOutlineItemId() {
-		return defaultParentOutlineItemID;
 	}
 	
 	public static void putApplicationState(ApplicationState applicationState) {
@@ -375,6 +374,40 @@ public class VaultPreferenceActivity extends Activity {
 
 		editor.putBoolean(SortSearchResultsKey, sortSearchResults);
 		editor.apply();
+	}
+
+	public static void setFolderUri(Uri folderUri) {
+		final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Globals.getApplication().getApplicationContext());
+
+		final SharedPreferences.Editor editor = sharedPreferences.edit();
+
+		editor.putString(FolderUriKey, folderUri.toString());
+		editor.apply();
+	}
+
+	public static Uri getSelectedFileUri() {
+		String uriString = PreferenceManager.getDefaultSharedPreferences(Globals.getApplication().getApplicationContext()).getString(SelectedFileUriKey, null);
+
+		return Uri.parse(uriString);
+	}
+
+	public static void setSelectedFileUri(Uri selectedFileUri) {
+		final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Globals.getApplication().getApplicationContext());
+
+		final SharedPreferences.Editor editor = sharedPreferences.edit();
+
+		editor.putString(SelectedFileUriKey, selectedFileUri.toString());
+		editor.apply();
+	}
+
+	public static Uri getFolderUri() {
+		String uriString = PreferenceManager.getDefaultSharedPreferences(Globals.getApplication().getApplicationContext()).getString(FolderUriKey, null);
+
+		try {
+			return Uri.parse(uriString);
+		} catch (Throwable ex) {
+			return null;
+		}
 	}
 
 	public static boolean getSortSearchResults() {

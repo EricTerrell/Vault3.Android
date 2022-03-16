@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -31,13 +31,13 @@ public class UpgradeVaultDocumentTask extends AsyncTask<UpgradeVaultDocumentTask
 	@Override
 	protected UpgradeVaultDocumentTaskResult doInBackground(UpgradeVaultDocumentTaskParameters... params) {
 		parameters = params[0];
-		UpgradeVaultDocumentTaskResult result = new UpgradeVaultDocumentTaskResult(null);
+		UpgradeVaultDocumentTaskResult result = new UpgradeVaultDocumentTaskResult();
 
 		try {
 			SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(parameters.getDBPath(), null);
-			VaultDocument vaultDocument = new VaultDocument(database);
+			final VaultDocument vaultDocument = new VaultDocument(database);
 
-			result = new UpgradeVaultDocumentTaskResult(vaultDocument);
+			result = new UpgradeVaultDocumentTaskResult();
 
 			vaultDocument.upgradeVaultDocument();
 			

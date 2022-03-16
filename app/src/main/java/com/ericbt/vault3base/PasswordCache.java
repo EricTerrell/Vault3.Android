@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -60,19 +60,6 @@ public class PasswordCache {
 		}
 		
 		return password;
-	}
-	
-	public void remove(String filePath) {
-		try {
-			String canonicalFilePath = new File(filePath).getCanonicalPath();
-			
-			Log.i(StringLiterals.LogTag, String.format("PasswordCache.remove: canonicalFilePath: %s", canonicalFilePath));
-
-			cache.remove(canonicalFilePath);
-		}
-		catch (Throwable ex) {
-			ex.printStackTrace();
-		}
 	}
 	
 	public static void clear() {

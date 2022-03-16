@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -60,20 +60,20 @@ public class SearchActivity extends AsyncTaskActivity {
 		
 		setTitle(String.format("%s - Search", getString(R.string.app_name)));
 
-        ListView searchResultsListView = (ListView) findViewById(R.id.SearchResultsListView);
+        ListView searchResultsListView = findViewById(R.id.SearchResultsListView);
 		
 		searchResultsAdapter = new SearchResultsArrayAdapter(this, R.id.SearchResultsTextView);
 		searchResultsListView.setAdapter(searchResultsAdapter);
 
 		searchResultsAdapter.setSearchActivity(this);
 		
-		searchHitsText = (TextView) findViewById(R.id.SearchHitsText);
+		searchHitsText = findViewById(R.id.SearchHitsText);
 		
-		cancelButton = (Button) findViewById(R.id.Cancel);
+		cancelButton = findViewById(R.id.Cancel);
 
-		searchButton = (Button) findViewById(R.id.Go);
+		searchButton = findViewById(R.id.Go);
 		
-		searchOptions = (Button) findViewById(R.id.SearchOptions);
+		searchOptions = findViewById(R.id.SearchOptions);
 		
 		searchOptions.setOnClickListener(v -> {
 			Intent intent = new Intent(SearchActivity.this, SearchOptionsActivity.class);
@@ -81,7 +81,7 @@ startActivity(intent);
 		});
 		
 		search = new Search();
-		searchText = (EditText) findViewById(R.id.SearchText);
+		searchText = findViewById(R.id.SearchText);
 		
 		searchText.setText(VaultPreferenceActivity.getSearchText());
 		

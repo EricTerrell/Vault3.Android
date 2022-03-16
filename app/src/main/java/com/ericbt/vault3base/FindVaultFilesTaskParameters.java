@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,12 +20,19 @@
 
 package com.ericbt.vault3base;
 
+import android.net.Uri;
+
 public class FindVaultFilesTaskParameters {
 	private final FileActivity fileActivity;
 	
 	public FileActivity getFileActivity() { return fileActivity; }
-	
-	public FindVaultFilesTaskParameters(FileActivity fileActivity) {
+
+	private final Uri folderUri;
+
+	public Uri getFolderUri() { return folderUri; }
+
+	public FindVaultFilesTaskParameters(FileActivity fileActivity, Uri folderUri) {
 		this.fileActivity = fileActivity;
+		this.folderUri = folderUri;
 	}
 }

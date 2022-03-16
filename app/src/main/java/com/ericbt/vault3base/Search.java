@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -30,10 +30,6 @@ import android.util.Log;
 public class Search {
 	private String searchText;
 	
-	public String getSearchText() {
-		return searchText;
-	}
-
 	public void setSearchText(String searchText) {
 		this.searchText = searchText;
 	}
@@ -76,40 +72,22 @@ public class Search {
 	
 	private MustFind mustFind;
 	
-	public MustFind getMustFind() {
-		return mustFind;
-	}
-
 	public void setMustFind(MustFind mustFind) {
 		this.mustFind = mustFind;
 	}
 
 	private boolean matchWholeWord;
 	
-	public boolean getMatchWholeWord() {
-		return matchWholeWord;
-	}
-
 	public void setMatchWholeWord(boolean matchWholeWord) {
 		this.matchWholeWord = matchWholeWord;
 	}
 
 	private boolean matchCase;
 	
-	public boolean getMatchCase() {
-		return matchCase;
-	}
-
 	public void setMatchCase(boolean matchCase) {
 		this.matchCase = matchCase;
 	}
 
-	private Pattern[] patterns;
-	
-	public Pattern[] getPatterns() {
-		return patterns;
-	}
-	
 	private String[] getSearchTokens() {
 		// Ensure that double quotes are paired.
 		int doubleQuotes = 0;

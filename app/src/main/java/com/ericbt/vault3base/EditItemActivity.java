@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -55,15 +55,15 @@ public class EditItemActivity extends Activity {
 		
 		setTitle(String.format("%s - Edit", getString(R.string.app_name)));
 
-        errorMessage = (TextView) findViewById(R.id.ErrorMessage);
+        errorMessage = findViewById(R.id.ErrorMessage);
         
-		title = (EditText) findViewById(R.id.Title);
-		text = (EditText) findViewById(R.id.Text);
+		title = findViewById(R.id.Title);
+		text = findViewById(R.id.Text);
 
         title.setText(getIntent().getExtras().getString(StringLiterals.Title));
         text.setText(getIntent().getExtras().getString(StringLiterals.Text));
         
-        okButton = (Button) findViewById(R.id.OKButton);
+        okButton = findViewById(R.id.OKButton);
         
         okButton.setOnClickListener(v -> {
 			String currentTitleValue = title.getEditableText().toString();
@@ -77,6 +77,8 @@ public class EditItemActivity extends Activity {
 				returnData.putExtra(StringLiterals.OutlineItemId, getIntent().getExtras().getInt(StringLiterals.OutlineItemId));
 				returnData.putExtra(StringLiterals.OutlineItemParentId, getIntent().getExtras().getInt(StringLiterals.OutlineItemParentId));
 				setResult(RESULT_OK, returnData);
+
+				Globals.getApplication().getVaultDocument().setDirty(true);
 			}
 			else {
 				setResult(RESULT_CANCELED);
@@ -85,7 +87,7 @@ public class EditItemActivity extends Activity {
 			finish();
 		});
 
-        Button cancelButton = (Button) findViewById(R.id.CancelButton);
+        Button cancelButton = findViewById(R.id.CancelButton);
         
         cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);

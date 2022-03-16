@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,49 +20,23 @@
 
 package com.ericbt.vault3base;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class FileUtils {
-	public static String getFileType(File file) {
-		String fileName = file.getName();
-		
-		return getFileType(fileName);
-	}
-	
-	private static String getFileType(String fileName) {
-		String fileType = null;
-		
-		int index = fileName.lastIndexOf('.');
-		
-		if (index >= 0) {
-			fileType = fileName.substring(index + 1);
+	public static long copy(InputStream inputStream, OutputStream outputStream) throws IOException {
+		long bytes = 0;
+
+		byte[] buffer = new byte[1024];
+		int length;
+
+		while ((length = inputStream.read(buffer)) > 0) {
+			bytes += length;
+
+			outputStream.write(buffer, 0, length);
 		}
-		
-		return fileType;
-	}
-	
-	/**
-	 * Copies the specified file
-	 * @param srcPath path of file to be copied
-	 * @param destPath path to where file will be copied
-	 * @throws IOException
-	 */
-	public static void copyFile(String srcPath, String destPath) throws IOException {
 
-		try (final FileInputStream inputStream = new FileInputStream(srcPath);
-			 final FileOutputStream outputStream = new FileOutputStream(destPath)) {
-
-			final byte[] buffer = new byte[1024];
-			int length;
-
-			while ((length = inputStream.read(buffer)) > 0) {
-				outputStream.write(buffer, 0, length);
-			}
-
-			outputStream.flush();
-		}
+		return bytes;
 	}
 }

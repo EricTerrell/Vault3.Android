@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,16 +21,6 @@
 package com.ericbt.vault3base;
 
 public class UpgradeVaultDocumentTaskResult {
-	private VaultDocument vaultDocument;
-	
-	public VaultDocument getVaultDocument() {
-		return vaultDocument;
-	}
-
-	public void setVaultDocument(VaultDocument vaultDocument) {
-		this.vaultDocument = vaultDocument;
-	}
-
 	private Throwable exception;
 
 	public Throwable getException() {
@@ -39,9 +29,5 @@ public class UpgradeVaultDocumentTaskResult {
 
 	public void setException(Throwable exception) {
 		this.exception = exception;
-	}
-	
-	public UpgradeVaultDocumentTaskResult(VaultDocument vaultDocument) {
-		this.vaultDocument = vaultDocument;
 	}
 }

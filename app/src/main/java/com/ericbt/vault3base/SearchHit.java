@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,26 +21,18 @@
 package com.ericbt.vault3base;
 
 public class SearchHit {
-	private OutlineItem parent;
+	private final OutlineItem parent;
 
 	public OutlineItem getParent() {
 		return parent;
 	}
 
-	public void setParent(OutlineItem parent) {
-		this.parent = parent;
-	}
-	
-	private OutlineItem hit;
+	private final OutlineItem hit;
 
 	public OutlineItem getHit() {
 		return hit;
 	}
 
-	public void setHit(OutlineItem hit) {
-		this.hit = hit;
-	}
-	
 	public SearchHit(OutlineItem hit, OutlineItem parent) {
 		this.hit = hit;
 		this.parent = parent;

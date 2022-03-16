@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -28,8 +28,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 public class RemoveDocumentActivity extends Activity {
-	private String filePath;
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -40,24 +38,24 @@ public class RemoveDocumentActivity extends Activity {
 
 		setTitle(String.format("%s: Remove Document", getString(R.string.app_name)));
 		
-		TextView message = (TextView) findViewById(R.id.Message);
+		TextView message = findViewById(R.id.Message);
 		
-		filePath = getIntent().getExtras().getString(StringLiterals.FilePath);
-		message.setText(String.format("Remove %s?", filePath));
+		final String documentUri = getIntent().getExtras().getString(StringLiterals.DocumentUri);
+		message.setText(String.format("Remove %s?", DocumentFileUtils.getName(documentUri)));
 
-		Button okButton = (Button) findViewById(R.id.OKButton);
+		Button okButton = findViewById(R.id.OKButton);
 
 		okButton.setOnClickListener(v -> {
-			boolean removedCurrentDocument = VaultDocument.closeCurrentDocumentWhenDeletedOrRenamed(filePath);
+			boolean removedCurrentDocument = VaultDocument.closeCurrentDocumentWhenDeletedOrRenamed(documentUri);
 
 			Intent returnData = new Intent();
 			returnData.putExtra(StringLiterals.Action, removedCurrentDocument ? StringLiterals.RemoveCurrentDocument : StringLiterals.RemoveDocument);
-			returnData.putExtra(StringLiterals.FilePath, filePath);
+			returnData.putExtra(StringLiterals.DocumentUri, documentUri);
 			setResult(RESULT_OK, returnData);
 			finish();
 		});
 		
-		Button cancelButton = (Button) findViewById(R.id.CancelButton);
+		Button cancelButton = findViewById(R.id.CancelButton);
 		
 		cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);

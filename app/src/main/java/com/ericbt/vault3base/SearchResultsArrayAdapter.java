@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -60,7 +60,7 @@ public class SearchResultsArrayAdapter extends ArrayAdapter<SearchHit> {
         
         final SearchHit searchHit = getItem(position);
 
-        TextView textView = (TextView) convertView.findViewById(textViewResourceId);
+        TextView textView = convertView.findViewById(textViewResourceId);
     	textView.setText(searchHit.getHit().getTitle());
     	
     	textView.setOnClickListener(view -> {
@@ -69,7 +69,7 @@ public class SearchResultsArrayAdapter extends ArrayAdapter<SearchHit> {
             SearchResultsArrayAdapter.this.getContext().startActivity(intent);
         });
 
-        ImageView viewList = (ImageView) convertView.findViewById(R.id.view_list);
+        ImageView viewList = convertView.findViewById(R.id.view_list);
 
         viewList.setOnClickListener(v -> searchActivity.goToList(searchHit.getParent().getId()));
 

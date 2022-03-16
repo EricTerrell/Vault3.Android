@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,7 +20,6 @@
 
 package com.ericbt.vault3base;
 
-import android.Manifest;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
@@ -28,7 +27,6 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.net.Uri;
@@ -49,9 +47,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import java.io.File;
 
 import commonCode.VaultDocumentVersion;
@@ -59,11 +54,10 @@ import commonCode.VaultException;
 import fonts.FontList;
 
 public class Vault3 extends AsyncTaskActivity {
-	private final static int REQUEST_PERMISSION_CODE = 1000;
-	private final static int ACCEPT_LICENSE_TERMS    = 1001;
+	private final static int ACCEPT_LICENSE_TERMS = 1001;
 
 	private Menu optionsMenu;
-	private Button addItem;
+	private Button addItem, saveButton;
 	private ListView navigateListView;
 	private NavigateArrayAdapter navigateArrayAdapter;
 	private TextView parentTextView;
@@ -86,10 +80,6 @@ public class Vault3 extends AsyncTaskActivity {
 
 	private DocumentAction documentAction;
 
-	private final static String PERMISSION = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-
-	private int numberOfRejections = 0;
-
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(StringLiterals.LogTag, getPackageName());
@@ -107,21 +97,36 @@ public class Vault3 extends AsyncTaskActivity {
 			super.onCreate(savedInstanceState);
 
 			movingOutlineItem = new OutlineItem();
-			
+
+
 			ApplicationState applicationState = VaultPreferenceActivity.getApplicationState();
-			
+
 			// If we know which document to load, prepare to do it in onResume.
 			if (applicationState.getDbPath() != null && applicationState.getDbPath().length() > 0) {
 				int parentOutlineItemId = applicationState.getParentOutlineItemId() != 0 ? applicationState.getParentOutlineItemId() : 1;
 
 				documentAction = new DocumentAction(applicationState.getDbPath(), DocumentAction.Action.Load, parentOutlineItemId, null);
 			}
-			
+
 			VaultPreferenceActivity.init();
 
 	        setContentView(R.layout.main);
 
 			initActionBar();
+
+			saveButton = findViewById(R.id.Save);
+
+			saveButton.setOnClickListener(v -> {
+				setEnabled(false);
+
+				final SaveChangesTaskParameters saveChangesTaskParameters =
+						new SaveChangesTaskParameters(
+								DocumentFileUtils.getCurrentFileName(),
+								VaultPreferenceActivity.getSelectedFileUri(),
+								this);
+
+				new SaveChangesTask().execute(saveChangesTaskParameters);
+			});
 
 			parentTextView = findViewById(R.id.tvParent);
 			
@@ -161,20 +166,18 @@ public class Vault3 extends AsyncTaskActivity {
 			enableDisableParentLayout(false);
 		    
 		    addAds();
-
-			// Prompt user to accept license terms if they have not been previously accepted.
-			if (!VaultPreferenceActivity.getUserAcceptedTerms()) {
-				final Intent licenseTermsIntent = new Intent(Vault3.this, LicenseTermsActivity.class);
-				licenseTermsIntent.putExtra(StringLiterals.AllowCancel, false);
-				startActivityForResult(licenseTermsIntent, ACCEPT_LICENSE_TERMS);
-			} else {
-				requestPermission();
-			}
 		}
 
 		customBroadcastReceiver = createCustomBroadcastReceiver();
 
-        Log.i(StringLiterals.LogTag, "Vault3.onCreate end");
+		// Prompt user to accept license terms if they have not been previously accepted.
+		if (!VaultPreferenceActivity.getUserAcceptedTerms()) {
+			final Intent licenseTermsIntent = new Intent(Vault3.this, LicenseTermsActivity.class);
+			licenseTermsIntent.putExtra(StringLiterals.AllowCancel, false);
+			startActivityForResult(licenseTermsIntent, ACCEPT_LICENSE_TERMS);
+		}
+
+		Log.i(StringLiterals.LogTag, "Vault3.onCreate end");
 	}
 
 	private CustomBroadcastReceiver createCustomBroadcastReceiver() {
@@ -245,13 +248,13 @@ public class Vault3 extends AsyncTaskActivity {
 
 	private void addAds() {
 		if (Globals.isFreeVersion()) {
-			View adView = findViewById(R.id.adLayout);
+			final View adView = findViewById(R.id.adLayout);
 			adView.setVisibility(View.VISIBLE);
 
-			Button upgradeButton = (Button) findViewById(R.id.UpgradeButton);
+			final Button upgradeButton = findViewById(R.id.UpgradeButton);
 
 			upgradeButton.setOnClickListener(v -> {
-				Intent intent = new Intent(Vault3.this, UpgradeActivity.class);
+				final Intent intent = new Intent(Vault3.this, UpgradeActivity.class);
 				startActivity(intent);
 			});
 		}
@@ -285,10 +288,12 @@ public class Vault3 extends AsyncTaskActivity {
 
 		Log.i(StringLiterals.LogTag, "Vault3.onResume begin");
 
-        boolean loadedFromFileManager = false;
+		enableDisableSaveButton();
+
+		boolean loadedFromFileManager = false;
 
         if (getIntent() != null && getIntent().getData() != null) {
-            String fileManagerPath = getIntent().getData().getPath();
+            final String fileManagerPath = getIntent().getData().getPath();
 
             getIntent().setData(null); // we don't want to do this a second time after the password UI is mismissed.
             documentAction = null;
@@ -305,9 +310,13 @@ public class Vault3 extends AsyncTaskActivity {
 			}
 			else if (documentAction.getAction() == DocumentAction.Action.Close) {
 				Log.i(StringLiterals.LogTag, "Vault3.onResume closing document");
-				
+
 				updateGUIWhenCurrentDocumentOpenedOrClosed(false);
 				Globals.getApplication().setVaultDocument(null);
+
+				// Go back to FileActivity - there is nothing to do in the main activity now that
+				// the active file as been closed.
+				navigateToFilesActivity();
 			}
 			
 			documentAction = null;
@@ -320,7 +329,7 @@ public class Vault3 extends AsyncTaskActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		
-		MenuInflater menuInflater = getMenuInflater();
+		final MenuInflater menuInflater = getMenuInflater();
 		menuInflater.inflate(R.menu.options_menu, menu);
 		
 		optionsMenu = menu;
@@ -333,9 +342,14 @@ public class Vault3 extends AsyncTaskActivity {
 		boolean result = false;
 		
 		if (enabled) {
-			MenuItem sortMenuItem = menu.findItem(R.id.SortMenuItem);
-			sortMenuItem.setEnabled(Globals.getApplication().getVaultDocument() != null && Globals.getApplication().getVaultDocument().canSort(getParentOutlineItem()));
-			
+			final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+
+			final MenuItem sortMenuItem = menu.findItem(R.id.SortMenuItem);
+			sortMenuItem.setEnabled(vaultDocument != null && vaultDocument.canSort(getParentOutlineItem()));
+
+			final MenuItem searchMenuItem = menu.findItem(R.id.SearchMenuItem);
+			searchMenuItem.setEnabled(vaultDocument != null);
+
 			result = true;
 		}
 
@@ -347,12 +361,11 @@ public class Vault3 extends AsyncTaskActivity {
 		boolean result = false;
 		
 		if (item.getItemId() == R.id.FileMenuItem) {
-			Intent intent = new Intent(Vault3.this, FileActivity.class);
-			startActivityForResult(intent, FILE_ACTIVITY_RESULT);
+			navigateToFilesActivity();
 			result = true;
 		}
 		else if (item.getItemId() == R.id.SearchMenuItem) {
-			Intent intent = new Intent(Vault3.this, SearchActivity.class);
+			final Intent intent = new Intent(Vault3.this, SearchActivity.class);
 			intent.putExtra(StringLiterals.SelectedOutlineItemId, getParentOutlineItem().getId());
 			startActivityForResult(intent, SEARCH);
 			result = true;
@@ -361,19 +374,19 @@ public class Vault3 extends AsyncTaskActivity {
 			startActivityForResult(new Intent(this, VaultPreferenceActivity.class), SETTINGS);
 			result = true;
 		} else if (item.getItemId() == R.id.about_menu_item) {
-			Intent intent = new Intent(this, AboutActivity.class);
+			final Intent intent = new Intent(this, AboutActivity.class);
             startActivity(intent);     
 			result = true;
 		} else if (item.getItemId() == R.id.SortMenuItem) {
 			setEnabled(false);
 			new SortTask().execute(new SortTaskParameters(getParentOutlineItem(), this));
         } else if (item.getItemId() == R.id.HelpMenuItem) {
-            String url = getString(R.string.online_help_url);
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            final String url = getString(R.string.online_help_url);
+            final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(intent);
         } else if (item.getItemId() == R.id.CloudSyncMenuItem) {
-            String url = getString(R.string.cloud_sync_url);
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            final String url = getString(R.string.cloud_sync_url);
+            final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(intent);
         }
 
@@ -461,23 +474,19 @@ public class Vault3 extends AsyncTaskActivity {
 		}
 	}
 	
-	public void displayVaultDocument() {
-		displayVaultDocument(1);
-	}
-	
 	private void processException(Throwable ex, String dbFilePath) {
 		Log.e(StringLiterals.LogTag, String.format("Vault3.loadVaultFile exception %s", ex.getMessage()));
 		
 		ex.printStackTrace();
 
-        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle(String.format("Cannot Open %s Document", StringLiterals.ProgramName));
-        alertDialogBuilder.setPositiveButton("OK", null);
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this)
+				.setTitle(String.format("Cannot Open %s Document", StringLiterals.ProgramName))
+				.setPositiveButton("OK", null);
 
         boolean setMessage = false;
         
 		if (ex instanceof VaultException) {
-			VaultException vaultException = (VaultException) ex;
+			final VaultException vaultException = (VaultException) ex;
 			
 			if (vaultException.getExceptionCode() == VaultException.ExceptionCode.DatabaseVersionTooHigh) {
 		        alertDialogBuilder.setMessage(String.format("You must upgrade to the latest version of Vault 3 in order to open %s.", dbFilePath));
@@ -487,7 +496,7 @@ public class Vault3 extends AsyncTaskActivity {
 		}
 		
 		if (!setMessage) {
-	        alertDialogBuilder.setMessage(String.format("Cannot open %s.\r\n\r\nTurn off USB storage if it is on.\r\n\r\n%s", dbFilePath, ex.getMessage()));
+	        alertDialogBuilder.setMessage(String.format("Cannot open %s.\r\n\r\nTurn off USB storage if it is on.\r\n\r\n%s", new File(dbFilePath).getName(), ex.getMessage()));
 		}
                 
 		alertDialogBuilder.create().show();
@@ -530,7 +539,7 @@ public class Vault3 extends AsyncTaskActivity {
 	}
 	
 	public void enableDisableButtons() {
-		OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+		final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
 		boolean enabled = outlineItem != null && !outlineItem.isRoot();
 
 		enableDisableParentLayout(enabled);
@@ -546,10 +555,6 @@ public class Vault3 extends AsyncTaskActivity {
 
 	public View getParentLayout() {
 		return parentLayout;
-	}
-
-	public TextView getParentTextView() {
-		return parentTextView;
 	}
 
 	private void setCurrentOutlineItem(final OutlineItem currentOutlineItem) {
@@ -571,7 +576,7 @@ public class Vault3 extends AsyncTaskActivity {
 				((NavigateArrayAdapter) getNavigateListView().getAdapter()).selectOutlineItem(currentOutlineItem);
 			}
 			else {
-				Intent intent = new Intent(Vault3.this, TextActivity.class);
+				final Intent intent = new Intent(Vault3.this, TextActivity.class);
 				TextActivity.addTextData(Vault3.this.navigateArrayAdapter.getOutlineItem(), intent, true);
 				startActivityForResult(intent, TEXT);
 			}
@@ -581,18 +586,19 @@ public class Vault3 extends AsyncTaskActivity {
 	public void update(int outlineItemID) {
 		enable(false);
 		
-		UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItemID, this);
+		final UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItemID, this);
+
 		new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
 	}
 
 	public void update() {
-		OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+		final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
 
 		update(outlineItem.getId());
 	}
 
 	private void saveScrollPosition() {
-		OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+		final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
 		saveScrollPosition(outlineItem.getId(), navigateListView.getFirstVisiblePosition());
 	}
 	
@@ -600,12 +606,8 @@ public class Vault3 extends AsyncTaskActivity {
 		scrollPositions.put(outlineItemID, firstVisibleItemPosition);
 	}
 	
-	public Integer getScrollPosition(int outlineItemID) {
-		return scrollPositions.get(outlineItemID);
-	}
-	
 	private void restoreScrollPosition() {
-		OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+		final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
 
 		if (outlineItem != null) {
 			Integer firstVisibleItemPosition = scrollPositions.get(outlineItem.getId());
@@ -622,7 +624,9 @@ public class Vault3 extends AsyncTaskActivity {
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+		final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+
+		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
 
 		if (view.getId() == R.id.list_view) {
 			AdapterContextMenuInfo adapterContextMenuInfo = (AdapterContextMenuInfo) menuInfo;
@@ -630,39 +634,39 @@ public class Vault3 extends AsyncTaskActivity {
 			childOutlineItem = null;
 
 			if (outlineItem != null && outlineItem.getChildren().size() > adapterContextMenuInfo.position) {
-				MenuInflater inflater = getMenuInflater();
+				final MenuInflater inflater = getMenuInflater();
 				inflater.inflate(R.menu.navigate_context_menu, menu);
 				
 				childOutlineItem = outlineItem.getChildren().get(adapterContextMenuInfo.position);
 				
 				menu.setHeaderTitle(childOutlineItem.getTitle());
 				
-				MenuItem addMenuItem = menu.findItem(R.id.AddMenuItem);
-				addMenuItem.setEnabled(Globals.getApplication().getVaultDocument().canAdd());
+				final MenuItem addMenuItem = menu.findItem(R.id.AddMenuItem);
+				addMenuItem.setEnabled(vaultDocument.canAdd());
 				
-				MenuItem indentMenuItem = menu.findItem(R.id.IndentMenuItem);
-				indentMenuItem.setEnabled(Globals.getApplication().getVaultDocument().canIndent(childOutlineItem));
+				final MenuItem indentMenuItem = menu.findItem(R.id.IndentMenuItem);
+				indentMenuItem.setEnabled(vaultDocument.canIndent(childOutlineItem));
 				
-				MenuItem unIndentMenuItem = menu.findItem(R.id.UnIndentMenuItem);
-				unIndentMenuItem.setEnabled(Globals.getApplication().getVaultDocument().canUnIndent(childOutlineItem));
+				final MenuItem unIndentMenuItem = menu.findItem(R.id.UnIndentMenuItem);
+				unIndentMenuItem.setEnabled(vaultDocument.canUnIndent(childOutlineItem));
 				
-				MenuItem moveUpMenuItem = menu.findItem(R.id.MoveUpMenuItem);
-				moveUpMenuItem.setEnabled(Globals.getApplication().getVaultDocument().canMoveUp(childOutlineItem));
+				final MenuItem moveUpMenuItem = menu.findItem(R.id.MoveUpMenuItem);
+				moveUpMenuItem.setEnabled(vaultDocument.canMoveUp(childOutlineItem));
 				
-				MenuItem moveDownMenuItem = menu.findItem(R.id.MoveDownMenuItem);
-				moveDownMenuItem.setEnabled(Globals.getApplication().getVaultDocument().canMoveDown(childOutlineItem));
+				final MenuItem moveDownMenuItem = menu.findItem(R.id.MoveDownMenuItem);
+				moveDownMenuItem.setEnabled(vaultDocument.canMoveDown(childOutlineItem));
 				
-				MenuItem moveMenuItem = menu.findItem(R.id.MoveItemMenuItem);
+				final MenuItem moveMenuItem = menu.findItem(R.id.MoveItemMenuItem);
 
 				try {
-					moveMenuItem.setEnabled(Globals.getApplication().getVaultDocument().canMove());
+					moveMenuItem.setEnabled(vaultDocument.canMove());
 				} catch (VaultException e) {
 					e.printStackTrace();
 				}
 				
-				MenuItem moveItemHereMenuItem = menu.findItem(R.id.MoveItemHereMenuItem);
+				final MenuItem moveItemHereMenuItem = menu.findItem(R.id.MoveItemHereMenuItem);
 				
-				boolean enabled = Globals.getApplication().getVaultDocument().canMoveTo(movingOutlineItem, childOutlineItem);
+				boolean enabled = vaultDocument.canMoveTo(movingOutlineItem, childOutlineItem);
 				
 				moveItemHereMenuItem.setEnabled(enabled);
 				moveItemHereMenuItem.setVisible(enabled);
@@ -730,9 +734,13 @@ public class Vault3 extends AsyncTaskActivity {
 	public void enable(boolean enabled) {
 		if (enabled) {
 			enableDisableButtons();
+
+			enableDisableSaveButton();
 		}
 		else {
 			enableDisableParentLayout(false);
+
+			saveButton.setEnabled(false);
 		}
 		
 		enableOptionsMenuItems(enabled);
@@ -743,7 +751,7 @@ public class Vault3 extends AsyncTaskActivity {
 		navigateListView.setClickable(enabled);
 		navigateListView.setItemsCanFocus(enabled);
 
-		OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
+		final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
 
 		final boolean enableRoot = enabled && !outlineItem.isRoot();
 
@@ -775,6 +783,10 @@ public class Vault3 extends AsyncTaskActivity {
 		enableDisableParentLayout(false);
 
 		enableOptionsMenuItems(true);
+
+		if (!opened) {
+			setParentTitle(StringLiterals.EmptyString);
+		}
 	}
 	
 	private OutlineItem getParentOutlineItem() {
@@ -804,7 +816,9 @@ public class Vault3 extends AsyncTaskActivity {
 
 	@Override
 	public void onBackPressed() {
-		new ExitPrompt(this).onBackPressed();
+		if (enabled) {
+			new ExitPrompt(this).onBackPressed();
+		}
 	}
 	
 	public void exit() {
@@ -812,7 +826,7 @@ public class Vault3 extends AsyncTaskActivity {
 	}
 
 	public void initActionBar() {
-		ActionBar actionBar = getActionBar();
+		final ActionBar actionBar = getActionBar();
 		actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME | ActionBar.DISPLAY_SHOW_TITLE);
 	}
 
@@ -846,12 +860,12 @@ public class Vault3 extends AsyncTaskActivity {
 
 					setEnabled(false);
 
-					OutlineItem selectedOutlineItem = new OutlineItem();
+					final OutlineItem selectedOutlineItem = new OutlineItem();
 					selectedOutlineItem.setId(data.getExtras().getInt(StringLiterals.SelectedOutlineItemId, 0));
 					selectedOutlineItem.setSortOrder(data.getExtras().getInt(StringLiterals.SelectedOutlineItemSortOrder, 0));
 					selectedOutlineItem.setParentId(data.getExtras().getInt(StringLiterals.SelectedOutlineItemParentId, 1));
 
-					AddItemTaskParameters addItemTaskParameters = new AddItemTaskParameters(newOutlineItem,
+					final AddItemTaskParameters addItemTaskParameters = new AddItemTaskParameters(newOutlineItem,
 							selectedOutlineItem,
 							data.getExtras().getBoolean(StringLiterals.AddAbove),
 							data.getExtras().getBoolean(StringLiterals.DisplayHint),
@@ -907,17 +921,16 @@ public class Vault3 extends AsyncTaskActivity {
 				if (resultCode == RESULT_OK) {
 					documentAction = new DocumentAction(data.getExtras().getString(StringLiterals.DBPath), DocumentAction.Action.Load, 1, null);
 				} else if (resultCode == UpgradeVaultDocumentActivity.RESULT_EXCEPTION) {
-					AlertDialog.Builder alertDialogBuilder = new Builder(this);
-					alertDialogBuilder.setTitle("Cannot Upgrade");
-
-					String message = String.format("Cannot upgrade %s: %s",
+					final String message = String.format("Cannot upgrade %s: %s",
 							data.getExtras().getString(StringLiterals.DBPath),
 							data.getExtras().getString(StringLiterals.ExceptionMessage));
 
-					alertDialogBuilder.setMessage(message);
-					alertDialogBuilder.setPositiveButton("OK", null);
-
-					alertDialogBuilder.create().show();
+					new Builder(this)
+							.setTitle("Cannot Upgrade")
+							.setMessage(message)
+							.setPositiveButton("OK", null)
+							.create()
+							.show();
 				}
 			}
 			break;
@@ -940,7 +953,7 @@ public class Vault3 extends AsyncTaskActivity {
 			break;
 
 			case ACCEPT_LICENSE_TERMS: {
-				requestPermission();
+				navigateToFilesActivity();
 			}
 			break;
 		}
@@ -955,75 +968,30 @@ public class Vault3 extends AsyncTaskActivity {
 		Log.i(StringLiterals.LogTag, "Vault3.onActivityResult end");
 	}
 
-	private boolean havePermission() {
-		return ContextCompat.checkSelfPermission(this, PERMISSION) == PackageManager.PERMISSION_GRANTED;
+	private void navigateToFilesActivity() {
+		if (VaultPreferenceActivity.getUserAcceptedTerms()) {
+			final Intent fileActivity = new Intent(this, FileActivity.class);
+			startActivityForResult(fileActivity, FILE_ACTIVITY_RESULT);
+		}
 	}
 
-	private void requestPermission() {
-		Log.i(StringLiterals.LogTag, "requestPermission");
+	private void enableDisableSaveButton() {
+		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
 
-		if (!havePermission()) {
-			ActivityCompat.requestPermissions(this, new String[] { PERMISSION }, REQUEST_PERMISSION_CODE);
+		if (vaultDocument != null) {
+			saveButton.setEnabled(vaultDocument.isDirty());
+
+			Log.i(StringLiterals.LogTag,
+					String.format("onUserInteraction: isDirty: %b", vaultDocument.isDirty()));
+		} else {
+			saveButton.setEnabled(false);
 		}
 	}
 
 	@Override
-	public void onRequestPermissionsResult(int requestCode,
-										   String[] permissions,
-										   int[] grantResults) {
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+	public void onUserInteraction() {
+		super.onUserInteraction();
 
-		Log.i(StringLiterals.LogTag, "MainActivity.onRequestPermissionsResult");
-
-		if (requestCode == REQUEST_PERMISSION_CODE) {
-			// Checking whether user granted the permission or not.
-			if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-				numberOfRejections++;
-
-				Log.i(StringLiterals.LogTag,
-						String.format("numberOfRejections: %d", numberOfRejections));
-
-				// https://www.androidpolice.com/2020/02/19/android-11-will-block-apps-from-repeatedly-asking-for-permissions/
-				if (numberOfRejections < 2) {
-					displayPermissionsDeniedMessage();
-				} else {
-					displayGameOverMessage();
-				}
-			}
-		}
-	}
-
-	private void displayPermissionsDeniedMessage() {
-		Log.i(StringLiterals.LogTag, "displayPermissionsDeniedMessage");
-
-		final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle(getString(R.string.permissions));
-		alertDialogBuilder.setMessage(getString(R.string.permissions_not_granted));
-
-		alertDialogBuilder.setPositiveButton(StringLiterals.RequestPermissions, (dialog, which) -> {
-			requestPermission();
-		});
-
-		alertDialogBuilder.setNegativeButton(StringLiterals.Cancel, (dialog, which) -> {
-			finish();
-		});
-
-		final AlertDialog promptDialog = alertDialogBuilder.create();
-		promptDialog.setCancelable(false);
-		promptDialog.show();
-	}
-
-	private void displayGameOverMessage() {
-		final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle(getString(R.string.permissions));
-		alertDialogBuilder.setMessage(getString(R.string.game_over));
-
-		alertDialogBuilder.setPositiveButton(StringLiterals.OK, (dialog, which) -> {
-			finish();
-		});
-
-		final AlertDialog promptDialog = alertDialogBuilder.create();
-		promptDialog.setCancelable(false);
-		promptDialog.show();
+		enableDisableSaveButton();
 	}
 }

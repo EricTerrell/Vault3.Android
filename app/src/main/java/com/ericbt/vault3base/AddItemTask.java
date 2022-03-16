@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -49,14 +49,15 @@ public class AddItemTask extends AsyncTask<AddItemTaskParameters, Void, AddItemT
 		parameters.getVault3Activity().setEnabled(true);
 		
 		if (result.getException() != null) {
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getVault3Activity());
-			alertDialogBuilder.setTitle("Add");
-			alertDialogBuilder.setMessage("Cannot add outline item.");
-			alertDialogBuilder.setPositiveButton("OK", null);
-
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+			new AlertDialog.Builder(parameters.getVault3Activity())
+					.setTitle("Add")
+					.setMessage("Cannot add outline item.")
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
 		} else {
+			Globals.getApplication().getVaultDocument().setDirty(true);
+
 			parameters.getVault3Activity().update(parameters.getSelectedOutlineItem().getParentId());
 			
 			// Tell the user how to add the next item.
@@ -67,12 +68,11 @@ public class AddItemTask extends AsyncTask<AddItemTaskParameters, Void, AddItemT
 	}
 	
 	private void displayHint() {
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getVault3Activity());
-		alertDialogBuilder.setTitle("Add");
-		alertDialogBuilder.setMessage("To add more outline items, or to manipulate existing items, long-click an outline item or click the wrench icon.");
-		alertDialogBuilder.setPositiveButton("OK", null);
-
-		AlertDialog alertDialog = alertDialogBuilder.create();
-		alertDialog.show();
+		new AlertDialog.Builder(parameters.getVault3Activity())
+				.setTitle("Add")
+				.setMessage("To add more outline items, or to manipulate existing items, long-click an outline item or click the wrench icon.")
+				.setPositiveButton("OK", null)
+				.create()
+				.show();
 	}
 }

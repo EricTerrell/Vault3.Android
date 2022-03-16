@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -63,7 +63,7 @@ public class SetFontActivity extends Activity {
         
 		setTitle(String.format("%s - Set Font", getString(R.string.app_name)));
 		
-		fontSpinner = (Spinner) findViewById(R.id.Font);
+		fontSpinner = findViewById(R.id.Font);
 		
 		fontSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
@@ -90,7 +90,7 @@ public class SetFontActivity extends Activity {
 			}
 		});
 
-		fontStyleSpinner = (Spinner) findViewById(R.id.FontStyle);
+		fontStyleSpinner = findViewById(R.id.FontStyle);
 		
 		fontStyleSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
@@ -105,7 +105,7 @@ public class SetFontActivity extends Activity {
 			}
 		});
 
-		fontSizeSpinner = (Spinner) findViewById(R.id.FontSize);
+		fontSizeSpinner = findViewById(R.id.FontSize);
 		
 		fontSizeSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
@@ -125,7 +125,7 @@ public class SetFontActivity extends Activity {
 			}
 		});
 		
-		colorSpinner = (Spinner) findViewById(R.id.Color);
+		colorSpinner = findViewById(R.id.Color);
 		
 		colorSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
@@ -144,11 +144,13 @@ public class SetFontActivity extends Activity {
 			}
 		});
 		
-		preview = (TextView) findViewById(R.id.Preview);
+		preview = findViewById(R.id.Preview);
 
-        Button okButton = (Button) findViewById(R.id.OKButton);
+        Button okButton = findViewById(R.id.OKButton);
 		
 		okButton.setOnClickListener(v -> {
+			Globals.getApplication().getVaultDocument().setDirty(true);
+
 			Intent returnData = new Intent();
 			returnData.putExtra(StringLiterals.NewFontName, SetFontActivity.this.typefaceName);
 			returnData.putExtra(StringLiterals.NewFontSizeInPoints, (float) SetFontActivity.this.sizeInPoints);
@@ -159,7 +161,7 @@ public class SetFontActivity extends Activity {
 			finish();
 		});
 
-        Button cancelButton = (Button) findViewById(R.id.CancelButton);
+        Button cancelButton = findViewById(R.id.CancelButton);
 		
 		cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);

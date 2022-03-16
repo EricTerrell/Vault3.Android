@@ -65,6 +65,16 @@
                     android:paddingLeft="5dip"
                     android:paddingRight="5dip" >
                 </TextView>
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Save Changes"
+                    android:layout_gravity="fill_horizontal"
+                    android:id="@+id/Save"
+                    android:enabled="false"
+                    >
+                </Button>
             </LinearLayout>
 
             <View

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,10 +20,20 @@
 
 package com.ericbt.vault3base;
 
-public class TestingUtils {
-	public static void failSlowly() throws Exception {
-		Thread.sleep(10 * 1000);
-		
-		throw new Exception("oops");
+public class CopyDocumentFileTaskResult {
+	private Throwable exception;
+
+	public Throwable getException() {
+		return exception;
 	}
+
+	public void setException(Throwable exception) {
+		this.exception = exception;
+	}
+
+	private String destFilePath;
+
+	public String getDestFilePath() { return destFilePath; }
+
+	public void setDestFilePath(String destFilePath) { this.destFilePath = destFilePath; }
 }

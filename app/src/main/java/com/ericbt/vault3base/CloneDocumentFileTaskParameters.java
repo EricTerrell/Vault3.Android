@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,25 +20,34 @@
 
 package com.ericbt.vault3base;
 
-public class CopyDocumentTaskParameters {
-	private final String sourceFilePath;
-	private final String destFilePath;
-	
-	public String getSourceFilePath() {
-		return sourceFilePath;
+import android.net.Uri;
+
+public class CloneDocumentFileTaskParameters {
+	private final Uri sourceDocumentUri;
+
+	public Uri getSourceDocumentUri() {
+		return sourceDocumentUri;
 	}
 
-	public String getDestFilePath() {
-		return destFilePath;
-	}
+	private final Uri destDocumentUri;
+
+	public Uri getDestDocumentUri() { return destDocumentUri; }
 
 	private final FileActivity fileActivity;
-	
+
 	public FileActivity getFileActivity() { return fileActivity; }
-	
-	public CopyDocumentTaskParameters(String sourceFilePath, String destFilePath, FileActivity fileActivity) {
-		this.sourceFilePath = sourceFilePath;
-		this.destFilePath = destFilePath;
+
+	private final boolean removeSourceDocument;
+
+	public boolean getRemoveSourceDocument() { return removeSourceDocument; }
+
+	public CloneDocumentFileTaskParameters(Uri sourceDocumentUri,
+										   Uri destDocumentUri,
+										   FileActivity fileActivity,
+										   boolean removeSourceDocument) {
+		this.sourceDocumentUri = sourceDocumentUri;
+		this.destDocumentUri = destDocumentUri;
 		this.fileActivity = fileActivity;
+		this.removeSourceDocument = removeSourceDocument;
 	}
 }

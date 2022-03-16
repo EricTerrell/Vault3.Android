@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -56,13 +56,12 @@ public class SearchTask extends AsyncTask<SearchTaskParameters, SearchHit, Searc
 		searchTaskParameters.getSearchActivity().setEnabled(true);
 		
 		if (result.getException() != null) {
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(searchTaskParameters.getSearchActivity());
-			alertDialogBuilder.setTitle("Search");
-			alertDialogBuilder.setMessage("Cannot search.");
-			alertDialogBuilder.setPositiveButton("OK", null);
-			
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+			new AlertDialog.Builder(searchTaskParameters.getSearchActivity())
+					.setTitle("Search")
+					.setMessage("Cannot search.")
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
 		}
 		
 		searchTaskParameters.getSearchActivity().searchCompleted();

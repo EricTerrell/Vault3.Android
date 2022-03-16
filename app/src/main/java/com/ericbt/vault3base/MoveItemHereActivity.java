@@ -24,9 +24,9 @@ public class MoveItemHereActivity extends Activity {
 		
 		setTitle("Move Item Here");
 		
-		final RadioButton placeAboveSelectedItem = (RadioButton) findViewById(R.id.PlaceAboveSelectedItem);
+		final RadioButton placeAboveSelectedItem = findViewById(R.id.PlaceAboveSelectedItem);
 
-		Button okButton = (Button) findViewById(R.id.OKButton);
+		Button okButton = findViewById(R.id.OKButton);
 		
 		okButton.setOnClickListener(v -> {
 			Intent returnData = new Intent();

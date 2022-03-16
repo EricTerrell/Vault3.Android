@@ -23,7 +23,7 @@ public class AboutActivity extends Activity {
 		
         boolean isFreeVersion = Globals.isFreeVersion();
         
-        Button upgrade = (Button) findViewById(R.id.Upgrade);
+        Button upgrade = findViewById(R.id.Upgrade);
         upgrade.setEnabled(isFreeVersion);
         upgrade.setVisibility(isFreeVersion ? View.VISIBLE : View.INVISIBLE);
         
@@ -34,7 +34,7 @@ public class AboutActivity extends Activity {
 			});
         }
 		
-		Button readLicenseTermsButton = (Button) findViewById(R.id.ReadLicenseTerms);
+		Button readLicenseTermsButton = findViewById(R.id.ReadLicenseTerms);
 		
 		readLicenseTermsButton.setOnClickListener(v -> {
 			Intent intent = new Intent(AboutActivity.this, LicenseTermsActivity.class);
@@ -42,7 +42,7 @@ public class AboutActivity extends Activity {
 startActivity(intent);
 		});
 	
-		TextView version = (TextView) findViewById(R.id.Version);
+		TextView version = findViewById(R.id.Version);
 		
 		String versionName = "";
 		

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -38,6 +38,8 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.File;
+
 public class PasswordPromptActivity extends Activity {
     private EditText passwordEditText;
     private CheckBox forceUppercase, showPassword;
@@ -50,17 +52,17 @@ public class PasswordPromptActivity extends Activity {
 
 		setContentView(R.layout.password_prompt_dialog);
 		
-        passwordEditText = (EditText) findViewById(R.id.Password);
+        passwordEditText = findViewById(R.id.Password);
         
         passwordEditText.setFilters(new InputFilter[] { PasswordUI.createPasswordInputFilter() });
         
-        forceUppercase = (CheckBox) findViewById(R.id.ForceUppercasePassword);
+        forceUppercase = findViewById(R.id.ForceUppercasePassword);
         
         forceUppercase.setChecked(VaultPreferenceActivity.getForceUppercasePasswords());
         
         forceUppercase.setOnCheckedChangeListener((buttonView, isChecked) -> PasswordUI.updatePasswordInputType(passwordEditText, forceUppercase.isChecked(), showPassword.isChecked()));
 
-		showPassword = (CheckBox) findViewById(R.id.ShowPassword);
+		showPassword = findViewById(R.id.ShowPassword);
 
 		showPassword.setOnCheckedChangeListener((buttonView, isChecked) -> {
 			VaultPreferenceActivity.putShowPasswords(isChecked);
@@ -71,16 +73,16 @@ public class PasswordPromptActivity extends Activity {
 
 		PasswordUI.updatePasswordInputType(passwordEditText, forceUppercase.isChecked(), showPassword.isChecked());
         
-        final TextView errorMessage = (TextView) findViewById(R.id.ErrorMessage);
+        final TextView errorMessage = findViewById(R.id.ErrorMessage);
         errorMessage.setText(String.format("Password must contain at least %d characters.", CryptoUtils.getMinPasswordLength()));
         errorMessage.setBackgroundColor(Color.RED);
         
         setTitle(String.format("%s: Enter Password", getString(R.string.app_name)));
         
-        TextView message = (TextView) findViewById(R.id.Message);
-        message.setText(String.format("Enter password for %s", getIntent().getExtras().getString(StringLiterals.DBPath)));
+        TextView message = findViewById(R.id.Message);
+        message.setText(String.format("Enter password for %s:", new File(getIntent().getExtras().getString(StringLiterals.DBPath)).getName()));
         
-        final Button okButton = (Button) findViewById(R.id.OKButton);
+        final Button okButton = findViewById(R.id.OKButton);
         okButton.setEnabled(false);
         
         okButton.setOnClickListener(v -> {
@@ -93,8 +95,8 @@ public class PasswordPromptActivity extends Activity {
 			}
 
 			try {
-				SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(getIntent().getExtras().getString(StringLiterals.DBPath), null);
-				VaultDocument vaultDocument = new VaultDocument(database);
+				final SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(getIntent().getExtras().getString(StringLiterals.DBPath), null);
+				final VaultDocument vaultDocument = new VaultDocument(database);
 
 				if (vaultDocument.setPassword(passwordText)) {
 					Intent returnData = new Intent();
@@ -107,14 +109,15 @@ public class PasswordPromptActivity extends Activity {
 					finish();
 				}
 				else {
-					Builder alertDialogBuilder = new Builder(PasswordPromptActivity.this);
-
-					alertDialogBuilder.setTitle("Invalid Password");
-					alertDialogBuilder.setMessage(String.format("You entered an incorrect password for %s.", vaultDocument.getDatabase().getPath()));
-
-					alertDialogBuilder.setPositiveButton("OK", (dialog, which) -> passwordEditText.setText(""));
-
-					alertDialogBuilder.create().show();
+					new Builder(PasswordPromptActivity.this)
+							.setTitle("Invalid Password")
+							.setMessage(
+									String.format(
+										"You entered an incorrect password for %s.",
+										new File(vaultDocument.getDatabase().getPath()).getName()))
+							.setPositiveButton("OK", (dialog, which) -> passwordEditText.setText(StringLiterals.EmptyString))
+							.create()
+							.show();
 				}
 			}
 			catch (Exception ex) {
@@ -122,7 +125,7 @@ public class PasswordPromptActivity extends Activity {
 			}
 		});
         
-        final Button cancelButton = (Button) findViewById(R.id.CancelButton);
+        final Button cancelButton = findViewById(R.id.CancelButton);
 
         cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);
@@ -132,9 +135,9 @@ public class PasswordPromptActivity extends Activity {
 		passwordEditText.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void afterTextChanged(Editable s) {
-				String passwordText = passwordEditText.getEditableText().toString().trim();
+				final String passwordText = passwordEditText.getEditableText().toString().trim();
 				
-				boolean error = passwordText.length() < CryptoUtils.getMinPasswordLength();
+				final boolean error = passwordText.length() < CryptoUtils.getMinPasswordLength();
 				okButton.setEnabled(!error);
 				errorMessage.setVisibility(error ? View.VISIBLE : View.GONE);
 			}

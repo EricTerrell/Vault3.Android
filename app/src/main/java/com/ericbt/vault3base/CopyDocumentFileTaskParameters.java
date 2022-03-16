@@ -20,14 +20,26 @@
 
 package com.ericbt.vault3base;
 
-public class SearchTaskResult {
-	private Throwable exception;
+import android.net.Uri;
 
-	public Throwable getException() {
-		return exception;
+public class CopyDocumentFileTaskParameters {
+	private final Uri sourceFileUri;
+
+	public Uri getSourceFileUri() {
+		return sourceFileUri;
 	}
 
-	public void setException(Throwable exception) {
-		this.exception = exception;
+	private final String sourceFileName;
+
+	public String getSourceFileName() { return sourceFileName; }
+
+	private final FileActivity fileActivity;
+
+	public FileActivity getFileActivity() { return fileActivity; }
+
+	public CopyDocumentFileTaskParameters(Uri sourceFileUri, String sourceFileName, FileActivity fileActivity) {
+		this.sourceFileUri = sourceFileUri;
+		this.sourceFileName = sourceFileName;
+		this.fileActivity = fileActivity;
 	}
 }

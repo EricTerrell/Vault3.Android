@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -62,16 +62,15 @@ public class SortTask extends AsyncTask<SortTaskParameters, Void, SortTaskResult
 			parameters.getVault3Activity().setEnabled(true);
 			
 			if (result.getException() != null) {
-				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getVault3Activity());
-				alertDialogBuilder.setTitle("Sort");
-				alertDialogBuilder.setMessage("Cannot sort.");
-				alertDialogBuilder.setPositiveButton("OK", null);
-				
-				AlertDialog alertDialog = alertDialogBuilder.create();
-				alertDialog.show();
+				new AlertDialog.Builder(parameters.getVault3Activity())
+						.setTitle("Sort")
+						.setMessage("Cannot sort.")
+						.setPositiveButton("OK", null)
+						.create()
+						.show();
 			}
 			
-			NavigateArrayAdapter navigateArrayAdapter = (NavigateArrayAdapter) parameters.getVault3Activity().getNavigateListView().getAdapter();
+			final NavigateArrayAdapter navigateArrayAdapter = (NavigateArrayAdapter) parameters.getVault3Activity().getNavigateListView().getAdapter();
 	
 			try {
 				navigateArrayAdapter.setOutlineItem(result.getOutlineItem());

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -24,36 +24,32 @@ import android.app.AlertDialog;
 
 public class ExitPrompt {
 	private final Vault3 vault3Activity;
-	private AlertDialog promptDialog;
-	
+
 	public ExitPrompt(Vault3 vault3Activity) {
 		this.vault3Activity = vault3Activity;
 	}
-	
+
 	public void onBackPressed() {
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(vault3Activity);
-		alertDialogBuilder.setTitle("Exit");
-		alertDialogBuilder.setMessage(String.format("Exit %s?", StringLiterals.ProgramName));
-		
-		alertDialogBuilder.setPositiveButton("OK", (dialog, which) -> {
-			if (!VaultPreferenceActivity.getCachePasswords()) {
-				if (Globals.getApplication().getVaultDocument() != null &&
-					Globals.getApplication().getVaultDocument().isEncrypted()) {
-					Globals.getApplication().setVaultDocument(null, ExitPrompt.this.vault3Activity);
-				}
+		new AlertDialog.Builder(vault3Activity)
+				.setTitle("Exit")
+				.setMessage(String.format("Exit %s?", StringLiterals.ProgramName))
+				.setPositiveButton("OK", (dialog, which) -> {
+					if (!VaultPreferenceActivity.getCachePasswords()) {
+						if (Globals.getApplication().getVaultDocument() != null &&
+								Globals.getApplication().getVaultDocument().isEncrypted()) {
+							Globals.getApplication().setVaultDocument(null, ExitPrompt.this.vault3Activity);
+						}
 
-				PasswordCache.clear();
-			}
+						PasswordCache.clear();
+					}
 
-			promptDialog.dismiss();
+					dialog.dismiss();
 
-			vault3Activity.exit();
-		});
-
-		alertDialogBuilder.setNegativeButton("Cancel", (dialog, which) -> {
-		});
-		
-		promptDialog = alertDialogBuilder.create();
-		promptDialog.show();
+					vault3Activity.exit();
+				})
+				.setNegativeButton("Cancel", (dialog, which) -> {
+				})
+				.create()
+				.show();
 	}
 }

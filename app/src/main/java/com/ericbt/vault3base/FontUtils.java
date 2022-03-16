@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -62,12 +62,6 @@ public class FontUtils {
 		final DisplayMetrics displayMetrics = Globals.getApplication().getApplicationContext().getResources().getDisplayMetrics();
 
 		return (int) (points / pointsPerInch * displayMetrics.densityDpi);
-	}
-	
-	public static float pixelsToPoints(int pixels) {
-		final DisplayMetrics displayMetrics = Globals.getApplication().getApplicationContext().getResources().getDisplayMetrics();
-
-		return (int) (((float) pixels / (float) displayMetrics.densityDpi) * pointsPerInch);
 	}
 	
 	public static int getTextStyle(String styleText) {

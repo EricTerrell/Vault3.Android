@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/Users/Eric Terrell/Documents/software development/Vault3.Android/app/src/main/res/layout-land/main.xml" value="0.18121693121693122" />
+        <entry key="..\:/Users/Eric Terrell/Documents/software development/Vault3.Android/app/src/main/res/layout/about_dialog.xml" value="0.29375" />
+        <entry key="..\:/Users/Eric Terrell/Documents/software development/Vault3.Android/app/src/main/res/layout/file.xml" value="0.32518115942028986" />
+        <entry key="..\:/Users/Eric Terrell/Documents/software development/Vault3.Android/app/src/main/res/layout/remove_document_dialog.xml" value="0.24947916666666667" />
+        <entry key="..\:/Users/Eric Terrell/Documents/software development/Vault3.Android/app/src/main/res/layout/search.xml" value="0.17447916666666666" />
+        <entry key="..\:/Users/Eric Terrell/Documents/software development/Vault3.Android/app/src/main/res/layout/upgrade_vault_document.xml" value="0.24947916666666667" />
+      </map>
+    </option>
+  </component>
   <component name="NullableNotNullManager">
     <option name="myDefaultNullable" value="android.support.annotation.Nullable" />
     <option name="myDefaultNotNull" value="android.support.annotation.NonNull" />

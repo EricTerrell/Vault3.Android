@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -24,6 +24,8 @@ import android.app.AlertDialog;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import java.io.File;
+
 public class CreateDatabaseTask extends AsyncTask<CreateDatabaseTaskParameters, Void, CreateDatabaseTaskResult> {
 	private CreateDatabaseTaskParameters parameters;
 	
@@ -31,12 +33,17 @@ public class CreateDatabaseTask extends AsyncTask<CreateDatabaseTaskParameters, 
 	protected CreateDatabaseTaskResult doInBackground(CreateDatabaseTaskParameters... params) {
 		parameters = params[0];
 		
-		String dbPath = parameters.getdbPath();
+		final String dbPath = parameters.getdbPath();
 		
-		CreateDatabaseTaskResult result = new CreateDatabaseTaskResult(dbPath);
+		final CreateDatabaseTaskResult result = new CreateDatabaseTaskResult(dbPath);
 		
 		try {
 			VaultDocument.createNewVaultDocument(dbPath);
+
+			DocumentFileUtils.updateDocumentFile(
+					parameters.getFileActivity(),
+					new File(dbPath).getName(),
+					parameters.getSourceFileUri());
 		}
 		catch (Throwable ex) {
 			Log.e(StringLiterals.LogTag, String.format("CreateDatabaseTask: cannot create db file %s exception %s", dbPath, ex.getMessage()));
@@ -50,18 +57,16 @@ public class CreateDatabaseTask extends AsyncTask<CreateDatabaseTaskParameters, 
 	@Override
 	protected void onPostExecute(CreateDatabaseTaskResult createDatabaseTaskResult) {
 		parameters.getFileActivity().setEnabled(true);
-		
-		if (createDatabaseTaskResult.getException() == null) {
-			parameters.getFileActivity().loadNewDocument(createDatabaseTaskResult.getDbPath());
-		}
-		else {
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getFileActivity());
-			alertDialogBuilder.setTitle(String.format("New %s Document", StringLiterals.ProgramName));
-			alertDialogBuilder.setMessage(String.format("Cannot create %s.", createDatabaseTaskResult.getDbPath()));
-			alertDialogBuilder.setPositiveButton("OK", null);
-			
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+
+		parameters.getFileActivity().programmaticSearch();
+
+		if (createDatabaseTaskResult.getException() != null) {
+			new AlertDialog.Builder(parameters.getFileActivity())
+					.setTitle(String.format("New %s Document", StringLiterals.ProgramName))
+					.setMessage(String.format("Cannot create %s.", createDatabaseTaskResult.getDbPath()))
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
 		}
 	}
 }

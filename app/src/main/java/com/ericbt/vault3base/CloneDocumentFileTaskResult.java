@@ -20,7 +20,7 @@
 
 package com.ericbt.vault3base;
 
-public class SearchTaskResult {
+public class CloneDocumentFileTaskResult {
 	private Throwable exception;
 
 	public Throwable getException() {

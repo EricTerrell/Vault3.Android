@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -40,7 +40,7 @@ public class UpgradeActivity extends Activity {
 		
         boolean isFreeVersion = Globals.isFreeVersion();
         
-        Button upgrade = (Button) findViewById(R.id.Upgrade);
+        Button upgrade = findViewById(R.id.Upgrade);
         upgrade.setEnabled(isFreeVersion);
         upgrade.setVisibility(isFreeVersion ? View.VISIBLE : View.INVISIBLE);
         
@@ -69,7 +69,7 @@ public class UpgradeActivity extends Activity {
 			}
 		});
 		
-    	Button cancelButton = (Button) findViewById(R.id.CancelButton);
+    	Button cancelButton = findViewById(R.id.CancelButton);
     	
     	cancelButton.setOnClickListener(v -> finish());
 	}

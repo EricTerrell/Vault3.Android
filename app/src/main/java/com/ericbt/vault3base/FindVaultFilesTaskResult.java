@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,6 +20,8 @@
 
 package com.ericbt.vault3base;
 
+import androidx.documentfile.provider.DocumentFile;
+
 public class FindVaultFilesTaskResult {
 	private Throwable exception;
 
@@ -29,5 +31,13 @@ public class FindVaultFilesTaskResult {
 
 	public void setException(Throwable exception) {
 		this.exception = exception;
+	}
+
+	private DocumentFile[] documentFiles;
+
+	public DocumentFile[] getDocumentFiles() { return documentFiles; }
+
+	public void setDocumentFiles(DocumentFile[] documentFiles) {
+		this.documentFiles = documentFiles;
 	}
 }

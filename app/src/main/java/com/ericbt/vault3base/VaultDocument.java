@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -52,8 +52,6 @@ import fonts.AndroidFont;
 import fonts.FontList;
 
 public class VaultDocument {
-	public static final String VAULTFILETYPE = "vl3";
-	
 	private static final String ENCRYPTED = "Encrypted";
 
 	private static final String CIPHERTEXT_COLUMN_NAME = "Ciphertext";
@@ -64,10 +62,6 @@ public class VaultDocument {
 		return database;
 	}
 
-	public OutlineItem getContent() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, VaultException {
-		return getOutlineItem();
-	}
-
 	private final VaultDocumentVersion documentVersion;
 	
 	public VaultDocumentVersion getDocumentVersion() {
@@ -75,10 +69,6 @@ public class VaultDocument {
 	}
 
 	private String password;
-	
-	public String getPassword() {
-		return password;
-	}
 	
 	public boolean setPassword(String password) {
 		boolean setPassword = false;
@@ -107,7 +97,13 @@ public class VaultDocument {
 		
 		return setPassword;
 	}
-	
+
+	private boolean dirty = false;
+
+	public boolean isDirty() { return dirty; }
+
+	public void setDirty(boolean dirty) { this.dirty = dirty; }
+
 	private SecretKey secretKey;
 	
 	boolean isEncrypted;
@@ -273,21 +269,6 @@ public class VaultDocument {
 			NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
 			BadPaddingException, UnsupportedEncodingException, VaultException {
 		return getOutlineItem(id, true);
-	}
-
-	/**
-	 * Retrieves the root outline item
-	 * @return root outline item
-	 * @throws InvalidKeyException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException
-	 * @throws VaultException
-	 */
-	private OutlineItem getOutlineItem() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, VaultException {
-		return getOutlineItem(1);
 	}
 
 	private String getVaultDocumentInfo(String name) {
@@ -1510,8 +1491,12 @@ public class VaultDocument {
 	}
 	
 	public static void closeDocument() {
-		Globals.getApplication().getVaultDocument().close();
-		Globals.getApplication().setVaultDocument(null);
+		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+
+		if (vaultDocument != null) {
+			vaultDocument.close();
+			Globals.getApplication().setVaultDocument(null);
+		}
 	}
 
 	public static boolean closeCurrentDocumentWhenDeletedOrRenamed(String filePath) {

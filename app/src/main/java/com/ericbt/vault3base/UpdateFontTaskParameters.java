@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -25,36 +25,24 @@ import android.content.Context;
 import fonts.AndroidFont;
 
 public class UpdateFontTaskParameters {
-	private AndroidFont font;
+	private final AndroidFont font;
 
 	public AndroidFont getFont() {
 		return font;
 	}
 
-	public void setFont(AndroidFont font) {
-		this.font = font;
-	}
-	
-	private OutlineItem outlineItem;
+	private final OutlineItem outlineItem;
 
 	public OutlineItem getOutlineItem() {
 		return outlineItem;
 	}
 
-	public void setOutlineItem(OutlineItem outlineItem) {
-		this.outlineItem = outlineItem;
-	}
-	
-	private int color;
+	private final int color;
 
 	public int getColor() {
 		return color;
 	}
 
-	public void setColor(int color) {
-		this.color = color;
-	}
-	
 	private final TextDisplayUpdate textDisplayUpdate;
 	
 	public TextDisplayUpdate getTextDisplayUpdate() { return textDisplayUpdate; }

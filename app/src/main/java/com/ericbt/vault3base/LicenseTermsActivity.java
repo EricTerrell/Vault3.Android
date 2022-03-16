@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -30,12 +30,11 @@ import android.widget.RadioButton;
 
 public class LicenseTermsActivity extends Activity {
 	private boolean allowCancel;
-	private AlertDialog alertDialog;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		allowCancel = getIntent().getBooleanExtra(StringLiterals.AllowCancel, true);
 
 		if (allowCancel) {
@@ -43,16 +42,16 @@ public class LicenseTermsActivity extends Activity {
 		}
 
 		setContentView(R.layout.license_terms_dialog);
-		
+
 		setTitle(String.format("%s: License Terms", StringLiterals.ProgramName));
 
-		final RadioButton acceptLicenseTerms = (RadioButton) findViewById(R.id.AcceptLicenseTerms);
+		final RadioButton acceptLicenseTerms = findViewById(R.id.AcceptLicenseTerms);
 		acceptLicenseTerms.setChecked(VaultPreferenceActivity.getUserAcceptedTerms());
-		
-		final RadioButton rejectLicenseTerms = (RadioButton) findViewById(R.id.RejectLicenseTerms);
+
+		final RadioButton rejectLicenseTerms = findViewById(R.id.RejectLicenseTerms);
 		rejectLicenseTerms.setChecked(!VaultPreferenceActivity.getUserAcceptedTerms());
-		
-		Button okButton = (Button) findViewById(R.id.OKButton);
+
+		Button okButton = findViewById(R.id.OKButton);
 
 		okButton.setOnClickListener(v -> {
 			final boolean userAcceptedTerms = acceptLicenseTerms.isChecked();
@@ -60,26 +59,23 @@ public class LicenseTermsActivity extends Activity {
 			VaultPreferenceActivity.putUserAcceptedTerms(userAcceptedTerms);
 
 			if (!userAcceptedTerms) {
-				AlertDialog.Builder userRejectedTermsDialogBuilder = new AlertDialog.Builder(LicenseTermsActivity.this);
-				userRejectedTermsDialogBuilder.setTitle(String.format("Rejected %s License Terms", StringLiterals.ProgramName));
-				userRejectedTermsDialogBuilder.setMessage(String.format("You rejected the %s license terms. Please uninstall %s immediately.", StringLiterals.ProgramName, StringLiterals.ProgramName));
-				userRejectedTermsDialogBuilder.setPositiveButton("OK", (dialog, which) -> {
-					alertDialog.dismiss();
+				new AlertDialog.Builder(LicenseTermsActivity.this)
+						.setTitle(String.format("Rejected %s License Terms", StringLiterals.ProgramName))
+						.setMessage(String.format("You rejected the %s license terms. Please uninstall %s immediately.", StringLiterals.ProgramName, StringLiterals.ProgramName))
+						.setPositiveButton("OK", (dialog, which) -> {
+							dialog.dismiss();
 
-					finish();
+							finish();
 
-					Intent intent = new Intent(getApplicationContext(), Vault3.class);
-					intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-					intent.putExtra("EXIT", true);
-					startActivity(intent);
-				});
-
-				userRejectedTermsDialogBuilder.setCancelable(false);
-
-				alertDialog = userRejectedTermsDialogBuilder.create();
-				alertDialog.show();
-			}
-			else {
+							Intent intent = new Intent(getApplicationContext(), Vault3.class);
+							intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+							intent.putExtra("EXIT", true);
+							startActivity(intent);
+						})
+						.setCancelable(false)
+						.create()
+						.show();
+			} else {
 				finish();
 			}
 		});

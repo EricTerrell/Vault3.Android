@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -42,22 +42,22 @@ public class SearchOptionsActivity extends Activity {
         
         setTitle(String.format("%s: Search Options", getString(R.string.app_name)));
 
-        final Spinner searchScope = (Spinner) findViewById(R.id.SearchScope);
+        final Spinner searchScope = findViewById(R.id.SearchScope);
         searchScope.setSelection(VaultPreferenceActivity.getSearchScope() == SearchScope.SelectedOnly ? 0 : 1);
         
-        final Spinner searchFields = (Spinner) findViewById(R.id.SearchFields);
+        final Spinner searchFields = findViewById(R.id.SearchFields);
         searchFields.setSelection(VaultPreferenceActivity.getSearchFields() == SearchFields.Titles ? 0 : 1);
         
-        final Spinner mustFind = (Spinner) findViewById(R.id.MustFind);
+        final Spinner mustFind = findViewById(R.id.MustFind);
         mustFind.setSelection(VaultPreferenceActivity.getSearchMustFind() == MustFind.AtLeastOneWordOrPhrase ? 0 : 1);
         
-        final CheckBox matchWholeWords = (CheckBox) findViewById(R.id.MatchWholeWords);
+        final CheckBox matchWholeWords = findViewById(R.id.MatchWholeWords);
         matchWholeWords.setChecked(VaultPreferenceActivity.getSearchMatchWholeWords());
         
-        final CheckBox matchCase = (CheckBox) findViewById(R.id.MatchCase);
+        final CheckBox matchCase = findViewById(R.id.MatchCase);
         matchCase.setChecked(VaultPreferenceActivity.getSearchMatchCase());
         
-        final Spinner maxSearchHitsSpinner = (Spinner) findViewById(R.id.MaxSearchHits);
+        final Spinner maxSearchHitsSpinner = findViewById(R.id.MaxSearchHits);
         String maxSearchHits = String.valueOf(VaultPreferenceActivity.getMaxSearchHits());
         
         for (int i = 0; i < maxSearchHitsSpinner.getCount(); i++) {
@@ -73,7 +73,7 @@ public class SearchOptionsActivity extends Activity {
         
         sortSearchResults.setChecked(VaultPreferenceActivity.getSortSearchResults());
         
-        Button okButton = (Button) findViewById(R.id.OKButton);
+        Button okButton = findViewById(R.id.OKButton);
        
         okButton.setOnClickListener(v -> {
 			VaultPreferenceActivity.setSearchScope(searchScope.getSelectedItemPosition() == 0 ? SearchScope.SelectedOnly : SearchScope.All);
@@ -91,7 +91,7 @@ public class SearchOptionsActivity extends Activity {
 			finish();
 		});
         
-        Button cancelButton = (Button) findViewById(R.id.CancelButton);
+        Button cancelButton = findViewById(R.id.CancelButton);
         
         cancelButton.setOnClickListener(v -> finish());
 	}

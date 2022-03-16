@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -43,18 +43,18 @@ public class RemoveOutlineItemActivity extends Activity {
 
 		setTitle(String.format("%s: Remove", StringLiterals.ProgramName));
 		
-		TextView message = (TextView) findViewById(R.id.Message);
+		TextView message = findViewById(R.id.Message);
 		
 		message.setText(String.format("Remove %s?", getIntent().getExtras().getString(StringLiterals.Title)));
 
-		Button okButton = (Button) findViewById(R.id.OKButton);
+		Button okButton = findViewById(R.id.OKButton);
 
 		okButton.setOnClickListener(v -> {
 			setResult(RESULT_OK, getIntent());
 			finish();
 		});
 		
-		Button cancelButton = (Button) findViewById(R.id.CancelButton);
+		Button cancelButton = findViewById(R.id.CancelButton);
 		
 		cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);

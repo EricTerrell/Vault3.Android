@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -49,14 +49,15 @@ public class MoveItemUpTask extends AsyncTask<MoveItemUpTaskParameters, Void, Mo
 		parameters.getVault3Activity().setEnabled(true);
 		
 		if (result.getException() != null) {
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getVault3Activity());
-			alertDialogBuilder.setTitle("Move Up");
-			alertDialogBuilder.setMessage("Cannot move outline item up.");
-			alertDialogBuilder.setPositiveButton("OK", null);
-
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+			new AlertDialog.Builder(parameters.getVault3Activity())
+					.setTitle("Move Up")
+					.setMessage("Cannot move outline item up.")
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
 		} else {
+			Globals.getApplication().getVaultDocument().setDirty(true);
+
 			parameters.getVault3Activity().update();
 		}
 	}

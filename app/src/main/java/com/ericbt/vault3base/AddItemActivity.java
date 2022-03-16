@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -54,16 +54,16 @@ public class AddItemActivity extends Activity {
 
 		setContentView(R.layout.add_item_dialog);
 		
-        final TextView errorMessage = (TextView) findViewById(R.id.ErrorMessage);
+        final TextView errorMessage = findViewById(R.id.ErrorMessage);
         
-		title = (EditText) findViewById(R.id.Title);
-		text = (EditText) findViewById(R.id.Text);
+		title = findViewById(R.id.Title);
+		text = findViewById(R.id.Text);
 
-		final RadioButton addAboveRadioButton = (RadioButton) findViewById(R.id.AddAboveSelectedItem);
+		final RadioButton addAboveRadioButton = findViewById(R.id.AddAboveSelectedItem);
 		
         setTitle(String.format("%s: Add", StringLiterals.ProgramName));
         
-        okButton = (Button) findViewById(R.id.OKButton);
+        okButton = findViewById(R.id.OKButton);
         
         okButton.setOnClickListener(v -> {
 			Intent returnData = new Intent();
@@ -79,7 +79,7 @@ public class AddItemActivity extends Activity {
 			finish();
 		});
 
-        Button cancelButton = (Button) findViewById(R.id.CancelButton);
+        Button cancelButton = findViewById(R.id.CancelButton);
         
         cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);
@@ -89,7 +89,7 @@ public class AddItemActivity extends Activity {
         boolean aboveOrBelowPrompt = getIntent().getBooleanExtra(StringLiterals.AboveOrBelowPrompt, false);
         
         if (!aboveOrBelowPrompt) {
-        	RadioGroup selectAboveOrBelowSelectedItem = (RadioGroup) findViewById(R.id.AddAboveOrBelowSelectedItem);
+        	RadioGroup selectAboveOrBelowSelectedItem = findViewById(R.id.AddAboveOrBelowSelectedItem);
         	selectAboveOrBelowSelectedItem.setVisibility(View.GONE);
         }
         

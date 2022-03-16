@@ -7,7 +7,7 @@ import android.widget.EditText;
 
 /*
 Vault 3
-(C) Copyright 2021, Eric Bergman-Terrell
+(C) Copyright 2022, Eric Bergman-Terrell
 
 This file is part of Vault 3.
 
@@ -26,49 +26,49 @@ This file is part of Vault 3.
 */
 
 public class PasswordUI {
-	public static InputFilter createPasswordInputFilter() {
+    public static InputFilter createPasswordInputFilter() {
         // http://stackoverflow.com/questions/3349121/how-do-i-use-inputfilter-to-limit-characters-in-an-edittext-in-android
         return (source, start, end, dest, dstart, dend) -> {
-if (source instanceof SpannableStringBuilder) {
-SpannableStringBuilder sourceAsSpannableBuilder = (SpannableStringBuilder) source;
+            if (source instanceof SpannableStringBuilder) {
+                SpannableStringBuilder sourceAsSpannableBuilder = (SpannableStringBuilder) source;
 
-for (int i = end - 1; i >= start; i--) {
-char currentChar = source.charAt(i);
+                for (int i = end - 1; i >= start; i--) {
+                    char currentChar = source.charAt(i);
 
-if (!isValid(currentChar)) {
-sourceAsSpannableBuilder.delete(i, i + 1);
-}
-}
+                    if (!isValid(currentChar)) {
+                        sourceAsSpannableBuilder.delete(i, i + 1);
+                    }
+                }
 
-return source;
-} else {
-StringBuilder filteredStringBuilder = new StringBuilder();
+                return source;
+            } else {
+                StringBuilder filteredStringBuilder = new StringBuilder();
 
-for (int i = start; i < end; i++) {
-char currentChar = source.charAt(i);
+                for (int i = start; i < end; i++) {
+                    char currentChar = source.charAt(i);
 
-if (isValid(currentChar)) {
-filteredStringBuilder.append(currentChar);
-}
-}
+                    if (isValid(currentChar)) {
+                        filteredStringBuilder.append(currentChar);
+                    }
+                }
 
-return filteredStringBuilder.toString();
-}
-};
-	}
-	
-	private static boolean isValid(char ch) {
-		return !Character.isWhitespace(ch);
-	}
+                return filteredStringBuilder.toString();
+            }
+        };
+    }
 
-	public static void updatePasswordInputType(EditText editText, boolean forceUppercase, boolean showPassword) {
-		int inputType = InputType.TYPE_CLASS_TEXT |
-				(showPassword ? InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD : InputType.TYPE_TEXT_VARIATION_PASSWORD);
+    private static boolean isValid(char ch) {
+        return !Character.isWhitespace(ch);
+    }
 
-		if (forceUppercase) {
-			inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
-		}
+    public static void updatePasswordInputType(EditText editText, boolean forceUppercase, boolean showPassword) {
+        int inputType = InputType.TYPE_CLASS_TEXT |
+                (showPassword ? InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD : InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
-		editText.setInputType(inputType);
-	}
+        if (forceUppercase) {
+            inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
+        }
+
+        editText.setInputType(inputType);
+    }
 }

@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -64,26 +64,23 @@ public class UpdateNavigateListItemTask extends AsyncTask<UpdateNavigateListItem
 			VaultDocument.closeDocument();
 			parameters.getVault3Activity().updateGUIWhenCurrentDocumentOpenedOrClosed(false);
 
-	        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(parameters.getVault3Activity());
-	        
-			alertDialogBuilder.setTitle("Error");
-			
 			VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
-			
+
 			String message;
-			
+
 			if (vaultDocument != null) {
-				message = String.format("Cannot retrieve outline item %d in %s.", result.getOutlineItemID(), Globals.getApplication().getVaultDocument().getDatabase().getPath());				
+				message = String.format("Cannot retrieve outline item %d in %s.", result.getOutlineItemID(), Globals.getApplication().getVaultDocument().getDatabase().getPath());
 			}
 			else {
-				message = String.format("Cannot retrieve outline item %d", result.getOutlineItemID());				
+				message = String.format("Cannot retrieve outline item %d", result.getOutlineItemID());
 			}
-			
-	        alertDialogBuilder.setMessage(message);
 
-	        alertDialogBuilder.setPositiveButton("OK", null);
-	        
-	        alertDialogBuilder.create().show();
+			new AlertDialog.Builder(parameters.getVault3Activity())
+					.setTitle("Error")
+					.setMessage(message)
+					.setPositiveButton("OK", null)
+					.create()
+					.show();
 		}
 	}
 }

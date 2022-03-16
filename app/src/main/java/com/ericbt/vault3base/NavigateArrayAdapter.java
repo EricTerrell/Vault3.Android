@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -78,7 +78,7 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
         	convertView = infalInflater.inflate(R.layout.navigate_item, parent, false);
         }
 
-    	TextView textView = (TextView) convertView.findViewById(R.id.Title);
+    	TextView textView = convertView.findViewById(R.id.Title);
     	textView.setText(outlineItem.getTitle());
     	
     	if (!enabled) {
@@ -89,35 +89,36 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
         convertView.setClickable(true); 
         convertView.setFocusable(true); 
 
-    	final ImageView imageView = (ImageView) convertView.findViewById(R.id.HasChildren);
+    	final ImageView imageView = convertView.findViewById(R.id.HasChildren);
     	imageView.setEnabled(enabled);
     	imageView.setVisibility(outlineItem.getHasChildren() ? View.VISIBLE : View.INVISIBLE);
 
 		convertView.setBackgroundColor(outlineItem.isSelected() ? Color.BLUE : Color.BLACK);
 
     	textView.setOnClickListener(v -> {
-			Vault3 vault3 = (Vault3) NavigateArrayAdapter.this.getContext();
+			if (isActivityEnabled()) {
+				final Vault3 vault3 = (Vault3) this.getContext();
 
-			if (vault3.getTextFragment() != null) {
-				if (vault3.getParentLayout().isEnabled()) {
-					vault3.getParentLayout().setBackgroundColor(Color.DKGRAY);
+				if (vault3.getTextFragment() != null) {
+					if (vault3.getParentLayout().isEnabled()) {
+						vault3.getParentLayout().setBackgroundColor(Color.DKGRAY);
+					}
+
+					selectOutlineItem(outlineItem);
+					TextActivity.addTextData(outlineItem, vault3.getTextFragment().getActivity().getIntent(), false);
+					vault3.getTextFragment().update(true, outlineItem);
+				} else {
+					Intent intent = new Intent(getContext(), TextActivity.class);
+					TextActivity.addTextData(outlineItem, intent, false);
+					vault3.startActivityForResult(intent, Vault3.TEXT);
 				}
-
-				selectOutlineItem(outlineItem);
-				TextActivity.addTextData(outlineItem, vault3.getTextFragment().getActivity().getIntent(), false);
-				vault3.getTextFragment().update(true, outlineItem);
-			}
-			else {
-				Intent intent = new Intent(getContext(), TextActivity.class);
-				TextActivity.addTextData(outlineItem, intent, false);
-				vault3.startActivityForResult(intent, Vault3.TEXT);
 			}
 		});
 
 		textView.setOnLongClickListener(v -> false);
 
 		imageView.setOnClickListener(v -> {
-			if (outlineItem.getHasChildren()) {
+			if (isActivityEnabled() && outlineItem.getHasChildren()) {
 				int firstVisibleItemPos = ((Vault3) getContext()).getNavigateListView().getFirstVisiblePosition();
 
 				((Vault3) getContext()).saveScrollPosition(outlineItem.getParentId(), firstVisibleItemPos);
@@ -129,12 +130,17 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 			}
 		});
 
-		ImageView build = (ImageView) convertView.findViewById(R.id.build);
+		final ImageView build = convertView.findViewById(R.id.build);
 
 		if (VaultPreferenceActivity.getDisplayWrenchIcon()) {
 			build.setVisibility(View.VISIBLE);
 
-			build.setOnClickListener(v -> v.performLongClick());
+			build.setOnClickListener(v ->
+			{
+				if (isActivityEnabled()) {
+					v.performLongClick();
+				}
+			});
 		}
 		else {
 			build.setVisibility(View.GONE);
@@ -183,5 +189,11 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
+	}
+
+	private boolean isActivityEnabled() {
+		final Vault3 vault3 = (Vault3) this.getContext();
+
+		return vault3.enabled;
 	}
 }

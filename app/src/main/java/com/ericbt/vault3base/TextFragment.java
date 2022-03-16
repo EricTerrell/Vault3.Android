@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
 
   This file is part of Vault 3.
 
@@ -86,10 +86,10 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
 
         divider = view.findViewById(R.id.Divider);
 
-        title = (TextView) view.findViewById(R.id.Title);
+        title = view.findViewById(R.id.Title);
         title.setText(titleText);
 
-        text = (TextView) view.findViewById(R.id.Text);
+        text = view.findViewById(R.id.Text);
         text.setText(textText);
 
         if (savedInstanceState != null) {
@@ -135,7 +135,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
             text.setTypeface(typeface);
         }
 
-        scrollView = (ScrollView) view.findViewById(R.id.ScrollView);
+        scrollView = view.findViewById(R.id.ScrollView);
 
         RGBColor backgroundColor = VaultPreferenceActivity.getTextBackgroundColor();
 
@@ -157,7 +157,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
             text.setAutoLinkMask(text.getAutoLinkMask() & ~Linkify.MAP_ADDRESSES);
         }
 
-        edit = (Button) view.findViewById(R.id.Edit);
+        edit = view.findViewById(R.id.Edit);
 
         edit.setOnClickListener(v -> {
             Intent intent = new Intent(TextFragment.this.getActivity(), EditItemActivity.class);
@@ -168,7 +168,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
             startActivityForResult(intent, EDIT_ITEM);
         });
 
-        sendEmail = (Button) view.findViewById(R.id.SendEmail);
+        sendEmail = view.findViewById(R.id.SendEmail);
 
         sendEmail.setOnClickListener(v -> {
             // Create the Intent
@@ -189,7 +189,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
             startActivity(Intent.createChooser(emailIntent, "Send Email..."));
         });
 
-        setFont = (Button) view.findViewById(R.id.SetFont);
+        setFont = view.findViewById(R.id.SetFont);
 
         setFont.setOnClickListener(v -> {
             Intent intent = new Intent(TextFragment.this.getActivity(), SetFontActivity.class);

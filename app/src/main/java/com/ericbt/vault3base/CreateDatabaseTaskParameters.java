@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -20,19 +20,26 @@
 
 package com.ericbt.vault3base;
 
+import android.net.Uri;
+
 public class CreateDatabaseTaskParameters {
 	private final String dbPath;
 	
 	public String getdbPath() { return dbPath; }
-	
+
+	private final Uri sourceFileUri;
+
+	public Uri getSourceFileUri() { return sourceFileUri; }
+
 	private final FileActivity fileActivity;
 	
 	public FileActivity getFileActivity() {
 		return fileActivity;
 	}
 
-	public CreateDatabaseTaskParameters(String dbPath, FileActivity fileActivity) {
+	public CreateDatabaseTaskParameters(String dbPath, Uri sourceFileUri, FileActivity fileActivity) {
 		this.dbPath = dbPath;
+		this.sourceFileUri = sourceFileUri;
 		this.fileActivity = fileActivity;
 	}
 }

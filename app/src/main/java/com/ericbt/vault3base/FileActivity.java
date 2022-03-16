@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2021, Eric Bergman-Terrell
+  (C) Copyright 2022, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -21,10 +21,14 @@
 package com.ericbt.vault3base;
 
 import java.io.File;
+import java.util.Locale;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -36,23 +40,27 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.documentfile.provider.DocumentFile;
+
 public class FileActivity extends AsyncTaskActivity {
-	private boolean searchRequested = true;
 	private FileArrayAdapter arrayAdapter;
-	private FindVaultFilesTask findVaultFilesTask;
-	private ListView vaultFilesListView;
-	private Button searchForVaultFilesButton, cancelButton, newButton, passwordButton, closeButton;
+	private Button refreshButton, browseButton, newButton, passwordButton;
 	private TextView currentDocument;
-	private String selectedFilePath;
-	
+	private DocumentFile selectedFile;
+
 	private static final int REMOVE_DOCUMENT = 1;
 	private static final int NEW_DOCUMENT = 2;
 	private static final int CHANGE_PASSWORD = 3;
 	private static final int RENAME_DOCUMENT = 4;
 	private static final int COPY_DOCUMENT = 5;
-	
-	private void requestSearch() { searchRequested = true; }
-	
+	private static final int BROWSE = 6;
+
+	private Uri folderUri;
+
+	private boolean searching = false;
+
+	public void setSearching(boolean searching) { this.searching = searching; }
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		Log.i(StringLiterals.LogTag, "FileActivity.onCreate");
@@ -64,25 +72,18 @@ public class FileActivity extends AsyncTaskActivity {
 
 		setTitle(String.format("%s - File", getString(R.string.app_name)));
 
-		searchForVaultFilesButton = (Button) findViewById(R.id.SearchForVaultFiles);
-		searchForVaultFilesButton.setOnClickListener(v -> {
-			createRootFolderIfNecessary();
-
-			if (rootFolderExists()) {
-				searchForVaultFiles();
-			}
-			else {
-				promptUserToSpecifyRootFolder();
-			}
+		refreshButton = findViewById(R.id.Refresh);
+		refreshButton.setOnClickListener(v -> {
+			searchForVaultFiles();
 		});
 		
-		cancelButton = (Button) findViewById(R.id.Cancel);
+		browseButton = findViewById(R.id.Browse);
 		
-		cancelButton.setOnClickListener(v -> cancel());
+		browseButton.setOnClickListener(v -> browseForFolder());
 		
 		arrayAdapter = new FileArrayAdapter(this, R.layout.file_list, R.id.FileListTextView);
-		
-		vaultFilesListView = (ListView) findViewById(R.id.VaultFilesListView);
+
+		final ListView vaultFilesListView = findViewById(R.id.VaultFilesListView);
 		vaultFilesListView.setEmptyView(findViewById(R.id.EmptyVaultFilesListView));
 
 		registerForContextMenu(vaultFilesListView);
@@ -90,147 +91,140 @@ public class FileActivity extends AsyncTaskActivity {
 		vaultFilesListView.setAdapter(arrayAdapter);
 		
 		vaultFilesListView.setOnItemClickListener((parent, view, position, id) -> {
-			if (!enabled) {
-				cancel();
+			setEnabled(false);
+
+			// Close Vault database
+			final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+
+			if (vaultDocument != null) {
+				vaultDocument.close();
+
+				Globals.getApplication().setVaultDocument(null);
 			}
 
-			Intent returnData = new Intent();
-			returnData.putExtra(StringLiterals.Action, StringLiterals.Load);
-			returnData.putExtra(StringLiterals.DBPath, (String) vaultFilesListView.getItemAtPosition(position));
-			setResult(RESULT_OK, returnData);
-			finish();
+			final DocumentFile selectedFile = (DocumentFile) parent.getAdapter().getItem(position);
+
+			VaultPreferenceActivity.setSelectedFileUri(selectedFile.getUri());
+
+			final CopyDocumentFileTaskParameters params = new
+					CopyDocumentFileTaskParameters(selectedFile.getUri(),
+					selectedFile.getName(),
+					this);
+
+			new CopyDocumentFileTask().execute(params);
 		});
 
-		newButton = (Button) findViewById(R.id.New);
+		newButton = findViewById(R.id.New);
 		
-		newButton.setOnClickListener(v -> {
-			createRootFolderIfNecessary();
-
-Intent intent = new Intent(FileActivity.this, NewDocumentActivity.class);
-startActivityForResult(intent, NEW_DOCUMENT);
-		});
+		newButton.setOnClickListener(v -> createNewDocument(NEW_DOCUMENT));
 		
-		passwordButton = (Button) findViewById(R.id.Password);
+		passwordButton = findViewById(R.id.Password);
 		
 		passwordButton.setOnClickListener(v -> {
 			Intent intent = new Intent(FileActivity.this, ChangePasswordActivity.class);
 			startActivityForResult(intent, CHANGE_PASSWORD);
 		});
 		
-		currentDocument = (TextView) findViewById(R.id.CurrentDocument);
+		currentDocument = findViewById(R.id.CurrentDocument);
 
-		closeButton = (Button) findViewById(R.id.Close);
-		
-		closeButton.setOnClickListener(v -> {
-			Intent returnData = new Intent();
-			returnData.putExtra(StringLiterals.Action, StringLiterals.Close);
-			setResult(RESULT_OK, returnData);
-			finish();
-		});
-
-		createRootFolderIfNecessary();
-		
 		update();
-		
+
+		try {
+			folderUri = VaultPreferenceActivity.getFolderUri();
+
+			enableForSearch(true);
+
+			searchForVaultFiles();
+		} catch (Throwable ex) {
+			Log.e(StringLiterals.LogTag, String.format("FileActivity: Exception %s", ex.getMessage()));
+			ex.printStackTrace();
+		}
+
 		setResult(RESULT_CANCELED);
 	}
-	
+
+	private void browseForFolder() {
+		final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+
+		// Fix for this bug: When app first browses and selects a folder, that folder becomes
+		// the default. So the next time the user browses, the user must navigate up before
+		// ANY folder an be selected.
+
+		final String rootUri = getString(R.string.RootURI);
+		intent.putExtra("android.provider.extra.INITIAL_URI", Uri.parse(rootUri));
+
+		startActivityForResult(intent, BROWSE);
+	}
+
+	private void createNewDocument(int requestCode) {
+		final Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		intent.setType("application/text");
+		intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, VaultPreferenceActivity.getFolderUri());
+
+		startActivityForResult(intent, requestCode);
+	}
+
 	@Override
 	protected void onResume() {
 		super.onResume();
 		
-		if (searchRequested) {
-			searchRequested = false;
-			
-			searchForVaultFiles();
-		}
+		searchForVaultFiles();
 	}
 
 	private void searchForVaultFiles() {
-		arrayAdapter.clear();
+		if (folderUri != null && !searching) {
+			setSearching(true);
 
-		setEnabled(false);
-		
-		findVaultFilesTask = new FindVaultFilesTask();
-		findVaultFilesTask.execute(new FindVaultFilesTaskParameters(this));
-	}
-	
-	public void update(String filePath) {
-		arrayAdapter.add(filePath);
+			arrayAdapter.clear();
+
+			setEnabled(false);
+
+			final FindVaultFilesTaskParameters findVaultFilesTaskParameters =
+					new FindVaultFilesTaskParameters(this, folderUri);
+
+			new FindVaultFilesTask().execute(findVaultFilesTaskParameters);
+		}
 	}
 	
 	public void enableForSearch(boolean enabled) {
 		this.enabled = enabled;
 		
-		cancelButton.setEnabled(!enabled);
-		searchForVaultFilesButton.setEnabled(enabled);
+		browseButton.setEnabled(enabled);
+
+		final boolean folderSpecified = VaultPreferenceActivity.getFolderUri() != null;
+
+		refreshButton.setEnabled(enabled && folderSpecified);
+
 		arrayAdapter.setEnabled(enabled);
 	}
 
 	public void enable(boolean enabled) {
 		getActionBar().setDisplayHomeAsUpEnabled(enabled);
 
-		searchForVaultFilesButton.setEnabled(enabled);
-		newButton.setEnabled(enabled);
+		final boolean folderSpecified = VaultPreferenceActivity.getFolderUri() != null;
+
+		refreshButton.setEnabled(enabled && folderSpecified);
+
+		newButton.setEnabled(enabled && folderSpecified);
 		
 		passwordButton.setEnabled(enabled && Globals.getApplication().getVaultDocument() != null);
-		closeButton.setEnabled(enabled && Globals.getApplication().getVaultDocument() != null);
 
 		arrayAdapter.setEnabled(enabled);
-		
-		cancelButton.setEnabled(!enabled);
-	}
-	
-	private void cancel() {
-		if (findVaultFilesTask != null) {
-			findVaultFilesTask.cancel(true);
-			findVaultFilesTask = null;
-		}
-		
-		setEnabled(true);
-	}
-	
-	private void createRootFolderIfNecessary() {
-		String rootFolderPath = VaultPreferenceActivity.getRootFolderPath();
-		
-		File rootFolder = new File(rootFolderPath);
-		
-		if (!rootFolder.exists()) {
-			rootFolder.mkdirs();
-		}
-	}
-	
-	private boolean rootFolderExists() {
-		String rootFolderPath = VaultPreferenceActivity.getRootFolderPath();
-		
-		File rootFolder = new File(rootFolderPath);
-		
-		return rootFolder.exists();
-	}
-	
-	private void promptUserToSpecifyRootFolder() {
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle("Cannot Search");
-		alertDialogBuilder.setMessage("Turn off USB storage if it is on.\r\n\r\nPlease specify the Root Folder that will contain all your Vault 3 documents if you have not already done so.");
-		
-		alertDialogBuilder.setPositiveButton("OK", (dialog, which) -> startActivity(new Intent(FileActivity.this, VaultPreferenceActivity.class)));
 
-		alertDialogBuilder.setNegativeButton("Cancel", (dialog, which) -> {
-		});
-		
-		alertDialogBuilder.create().show();
+		browseButton.setEnabled(enabled);
 	}
-
+	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		if (view.getId() == R.id.VaultFilesListView) {
-			AdapterContextMenuInfo adapterContextMenuInfo = (AdapterContextMenuInfo) menuInfo;
-			selectedFilePath = arrayAdapter.getItem(adapterContextMenuInfo.position);
+		if (enabled && view.getId() == R.id.VaultFilesListView) {
+			final AdapterContextMenuInfo adapterContextMenuInfo = (AdapterContextMenuInfo) menuInfo;
+			selectedFile = arrayAdapter.getItem(adapterContextMenuInfo.position);
 			
-			MenuInflater inflater = getMenuInflater();
+			final MenuInflater inflater = getMenuInflater();
 			inflater.inflate(R.menu.file_context_menu, menu);
 
-			menu.setHeaderTitle(new File(selectedFilePath).getName());
+			menu.setHeaderTitle(selectedFile.getName());
 		}
 	}
 
@@ -239,134 +233,118 @@ startActivityForResult(intent, NEW_DOCUMENT);
 		boolean result = true;
 
 		if (item.getItemId() == R.id.RemoveMenuItem) {
-			Intent intent = new Intent(this, RemoveDocumentActivity.class);
-			intent.putExtra(StringLiterals.FilePath, selectedFilePath);
+			final Intent intent = new Intent(this, RemoveDocumentActivity.class);
+			intent.putExtra(StringLiterals.DocumentUri, selectedFile.getUri().toString());
 			startActivityForResult(intent, REMOVE_DOCUMENT);
 		} else if (item.getItemId() == R.id.CopyMenuItem) {
-			Intent intent = new Intent(this, CopyDocumentActivity.class);
-			intent.putExtra(StringLiterals.SourceFilePath, selectedFilePath);
-			startActivityForResult(intent, COPY_DOCUMENT);
+			createNewDocument(COPY_DOCUMENT);
 		} else if (item.getItemId() == R.id.RenameMenuItem) {
-			Intent intent = new Intent(this, RenameDocumentActivity.class);
-			intent.putExtra(StringLiterals.SourceFilePath, selectedFilePath);
-			startActivityForResult(intent, RENAME_DOCUMENT);
+			createNewDocument(RENAME_DOCUMENT);
 		} else {
 			result = super.onContextItemSelected(item);
 		}
 
 		return result;
 	}
-	
+
+	@SuppressLint("WrongConstant")
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		
-		switch(requestCode) {
-		case REMOVE_DOCUMENT: {
-			if (resultCode == RESULT_OK) {
-				String action = data.getStringExtra(StringLiterals.Action);
-				String filePath = data.getStringExtra(StringLiterals.FilePath);
-	
-				File file = new File(filePath);
-				
-				if (file.delete()) {
-					String journalPath = String.format("%s-journal", filePath);
-					file = new File(journalPath);
-					file.delete();
-					
-					if (StringLiterals.RemoveCurrentDocument.equals(action)) {
-							Intent returnData = new Intent();
-							returnData.putExtra(StringLiterals.Action, StringLiterals.RemoveCurrentDocument);
-							setResult(RESULT_OK, returnData);
-							finish();
-					}
-					else {
-						update();
-						
-						requestSearch();
-					}
+
+		switch (requestCode) {
+			case REMOVE_DOCUMENT: {
+				if (resultCode == RESULT_OK) {
+					final Uri documentUri = Uri.parse(data.getStringExtra(StringLiterals.DocumentUri));
+
+					DocumentFileUtils.removeDocumentAndTempFile(this, documentUri);
+
+					closeActiveDocument();
 				}
-				else {
-					Log.e(StringLiterals.LogTag, String.format("FileActivity.onActivityResult: Cannot delete %s", filePath));
-				}
+				break;
 			}
-		break;
-		}
-		
-		case NEW_DOCUMENT: {
-			if (resultCode == RESULT_OK) {
-				setEnabled(false);
-				
-				new CreateDatabaseTask().execute(new CreateDatabaseTaskParameters(data.getStringExtra(StringLiterals.FilePath), this));
-			}
-		}
-		break;
-		
-		case CHANGE_PASSWORD: {
-			if (resultCode == RESULT_OK) {
-				setEnabled(false);
-				
-				new ChangePasswordTask().execute(new ChangePasswordTaskParameters(data.getStringExtra(StringLiterals.NewPassword), this));
-			}
-		}
-		break;
-		
-		case RENAME_DOCUMENT: {
-			if (resultCode == RESULT_OK) {
-				String oldFilePath = data.getExtras().getString(StringLiterals.OldFilePath);
-				String newFilePath = data.getExtras().getString(StringLiterals.NewFilePath);
-				
-				File sourceFile = new File(oldFilePath);
-				boolean renamed = sourceFile.renameTo(new File(newFilePath));
-				
-				if (renamed) {
-					if (Globals.getApplication().getVaultDocument() != null && Globals.getApplication().getVaultDocument().getDatabase().getPath().equals(oldFilePath)) {
-						Intent returnData = new Intent();
-						returnData.putExtra(StringLiterals.Action, StringLiterals.Close);
-						setResult(RESULT_OK, returnData);
-						finish();
-					}
-					else {
-						update();
-						
-						requestSearch();
+
+			case NEW_DOCUMENT: {
+				if (resultCode == RESULT_OK) {
+					final Uri databaseUri = data.getData();
+
+					final String[] segments = databaseUri.getLastPathSegment().split("/");
+
+					final String tempFileName = segments[segments.length - 1];
+
+					if (tempFileName.toLowerCase(Locale.ROOT).endsWith(StringLiterals.FileType)) {
+						final String tempFilePath = String.format("%s/%s", DocumentFileUtils.getTempFolderPath(this), tempFileName);
+
+						setEnabled(false);
+
+						new CreateDatabaseTask().execute(
+								new CreateDatabaseTaskParameters(
+										tempFilePath,
+										databaseUri,
+										this));
+					} else {
+						displayFileTypeRequiredMessage();
 					}
 				}
-				else {
-					AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-					alertDialogBuilder.setTitle("Rename Document");
-					alertDialogBuilder.setMessage(String.format("Cannot rename %s to %s", oldFilePath, newFilePath));
-					alertDialogBuilder.setPositiveButton("OK", null);
-					
-					AlertDialog alertDialog = alertDialogBuilder.create();
-					alertDialog.show();
+			}
+			break;
+
+			case CHANGE_PASSWORD: {
+				if (resultCode == RESULT_OK) {
+					setEnabled(false);
+
+					new ChangePasswordTask().execute(new ChangePasswordTaskParameters(data.getStringExtra(StringLiterals.NewPassword), this));
 				}
-				
 			}
-		}
-		break;
-		
-		case COPY_DOCUMENT: {
-			if (resultCode == RESULT_OK) {
-				setEnabled(false);
-				
-				CopyDocumentTaskParameters copyDocumentTaskParameters = 
-						new CopyDocumentTaskParameters(data.getStringExtra(StringLiterals.SourceFilePath), 
-													   data.getStringExtra(StringLiterals.DestinationFilePath), 
-													   this);
-				new CopyDocumentTask().execute(copyDocumentTaskParameters);
+			break;
+
+			case RENAME_DOCUMENT: {
+				copyOrRenameDocumentFile(data, resultCode, true);
 			}
-		}
-		break;
+			break;
+
+			case COPY_DOCUMENT: {
+				copyOrRenameDocumentFile(data, resultCode, false);
+			}
+			break;
+
+			case BROWSE: {
+				if (data != null) {
+					folderUri = data.getData();
+					VaultPreferenceActivity.setFolderUri(folderUri);
+
+					final int takeFlags = data.getFlags()
+							& (Intent.FLAG_GRANT_READ_URI_PERMISSION
+							| Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+					getContentResolver().takePersistableUriPermission(folderUri, takeFlags);
+
+					searchForVaultFiles();
+				}
+			}
+			break;
 		}
 	}
-	
-	public void loadNewDocument(String dbPath) {
-		Intent returnData = new Intent();
-		returnData.putExtra(StringLiterals.Action, StringLiterals.Load);
-		returnData.putExtra(StringLiterals.DBPath, dbPath);	
-		setResult(RESULT_OK, returnData);
-		finish();
+
+	private void copyOrRenameDocumentFile(Intent data, int resultCode, boolean deleteSourceDocumentFile) {
+		if (resultCode == RESULT_OK) {
+			final Uri destDocumentFileUri = data.getData();
+
+			if (destDocumentFileUri.toString().toLowerCase(Locale.ROOT).endsWith(StringLiterals.FileType)) {
+				setEnabled(false);
+
+				final CloneDocumentFileTaskParameters cloneDocumentFileTaskParameters =
+						new CloneDocumentFileTaskParameters(
+								selectedFile.getUri(),
+								destDocumentFileUri,
+								this,
+								deleteSourceDocumentFile);
+
+				new CloneDocumentFileTask().execute(cloneDocumentFileTaskParameters);
+			} else {
+				displayFileTypeRequiredMessage();
+			}
+		}
 	}
 
 	private void update() {
@@ -395,9 +373,28 @@ startActivityForResult(intent, NEW_DOCUMENT);
      * Automatically do a search after a file has been copied, so that the new file is displayed.
      */
     public void programmaticSearch() {
-        if (rootFolderExists()) {
-            searchForVaultFiles();
-        }
+		searchForVaultFiles();
     }
 
+    public void updateFileList(DocumentFile[] documentFiles) {
+		arrayAdapter.clear();
+		arrayAdapter.addAll(documentFiles);
+	}
+
+	private void displayFileTypeRequiredMessage() {
+		new AlertDialog.Builder(this)
+				.setTitle("Missing File Type")
+				.setMessage(String.format("File name must end in \"%s\"", StringLiterals.FileType))
+				.setPositiveButton("OK", null)
+				.create()
+				.show();
+	}
+
+	public void closeActiveDocument() {
+		// If we renamed the active file, need to close it.
+		final Intent returnData = new Intent();
+		returnData.putExtra(StringLiterals.Action, StringLiterals.Close);
+		setResult(RESULT_OK, returnData);
+		finish();
+	}
 }
