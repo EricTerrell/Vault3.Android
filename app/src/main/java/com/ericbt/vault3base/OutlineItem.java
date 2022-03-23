@@ -110,8 +110,8 @@ public class OutlineItem {
 	public RGBColor getColor() {
 		RGBColor color = this.color;
 		
-		if (color.isDefaulted() && VaultPreferenceActivity.useDefaultTextFontAndColor()) {
-			RGBColor newColor = VaultPreferenceActivity.getDefaultTextFontColor();
+		if (color != null && color.isDefaulted() && VaultPreferenceActivity.useDefaultTextFontAndColor()) {
+			final RGBColor newColor = VaultPreferenceActivity.getDefaultTextFontColor();
 			
 			if (newColor != null) {
 				color = newColor;

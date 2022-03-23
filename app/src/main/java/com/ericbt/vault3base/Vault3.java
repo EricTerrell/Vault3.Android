@@ -57,7 +57,7 @@ public class Vault3 extends AsyncTaskActivity {
 	private final static int ACCEPT_LICENSE_TERMS = 1001;
 
 	private Menu optionsMenu;
-	private Button addItem, saveButton;
+	private Button addItem, saveButton, closeButton;
 	private ListView navigateListView;
 	private NavigateArrayAdapter navigateArrayAdapter;
 	private TextView parentTextView;
@@ -98,8 +98,7 @@ public class Vault3 extends AsyncTaskActivity {
 
 			movingOutlineItem = new OutlineItem();
 
-
-			ApplicationState applicationState = VaultPreferenceActivity.getApplicationState();
+			final ApplicationState applicationState = VaultPreferenceActivity.getApplicationState();
 
 			// If we know which document to load, prepare to do it in onResume.
 			if (applicationState.getDbPath() != null && applicationState.getDbPath().length() > 0) {
@@ -113,6 +112,12 @@ public class Vault3 extends AsyncTaskActivity {
 	        setContentView(R.layout.main);
 
 			initActionBar();
+
+			closeButton = findViewById(R.id.Close);
+
+			closeButton.setOnClickListener(v -> {
+				conditionallyCloseDocument();
+			});
 
 			saveButton = findViewById(R.id.Save);
 
@@ -289,6 +294,7 @@ public class Vault3 extends AsyncTaskActivity {
 		Log.i(StringLiterals.LogTag, "Vault3.onResume begin");
 
 		enableDisableSaveButton();
+		enableDisableCloseButton();
 
 		boolean loadedFromFileManager = false;
 
@@ -309,20 +315,50 @@ public class Vault3 extends AsyncTaskActivity {
 				loadVaultFile(documentAction.getDbFilePath(), documentAction.getOutlineId(), documentAction.getPassword());
 			}
 			else if (documentAction.getAction() == DocumentAction.Action.Close) {
-				Log.i(StringLiterals.LogTag, "Vault3.onResume closing document");
-
-				updateGUIWhenCurrentDocumentOpenedOrClosed(false);
-				Globals.getApplication().setVaultDocument(null);
-
-				// Go back to FileActivity - there is nothing to do in the main activity now that
-				// the active file as been closed.
-				navigateToFilesActivity();
+				closeDocument();
 			}
 			
 			documentAction = null;
 		}
 
 		Log.i(StringLiterals.LogTag, "Vault3.onResume end");
+	}
+
+	private void closeDocument() {
+		Log.i(StringLiterals.LogTag, "Vault3.closeDocument");
+
+		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+		vaultDocument.close();
+
+		updateGUIWhenCurrentDocumentOpenedOrClosed(false);
+		Globals.getApplication().setVaultDocument(null);
+
+		if (textFragment != null) {
+			textFragment.update(false, new OutlineItem());
+		}
+
+		invalidateOptionsMenu();
+
+		// Go back to FileActivity - there is nothing to do in the main activity now that
+		// the active file as been closed.
+		navigateToFilesActivity();
+	}
+
+	private void conditionallyCloseDocument() {
+		if (Globals.getApplication().getVaultDocument().isDirty()) {
+			new AlertDialog.Builder(this)
+					.setTitle(String.format("Close"))
+					.setMessage("Closing will discard changes. Close current document?")
+					.setPositiveButton("Yes", (dialog, which) -> {
+						closeDocument();
+					})
+					.setNegativeButton("No", null)
+					.setCancelable(false)
+					.create()
+					.show();
+		} else {
+			closeDocument();
+		}
 	}
 
 	@Override
@@ -736,11 +772,13 @@ public class Vault3 extends AsyncTaskActivity {
 			enableDisableButtons();
 
 			enableDisableSaveButton();
+			enableDisableCloseButton();
 		}
 		else {
 			enableDisableParentLayout(false);
 
 			saveButton.setEnabled(false);
+			closeButton.setEnabled(false);
 		}
 		
 		enableOptionsMenuItems(enabled);
@@ -986,6 +1024,12 @@ public class Vault3 extends AsyncTaskActivity {
 		} else {
 			saveButton.setEnabled(false);
 		}
+	}
+
+	private void enableDisableCloseButton() {
+		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+
+		closeButton.setEnabled(vaultDocument != null);
 	}
 
 	@Override

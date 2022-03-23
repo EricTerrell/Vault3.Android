@@ -292,15 +292,19 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
         title.setText(titleText);
         text.setText(textText);
 
-        red = outlineItem.getColor().getRed();
-        green = outlineItem.getColor().getGreen();
-        blue = outlineItem.getColor().getBlue();
+        final RGBColor rgbColor = outlineItem.getColor();
 
-        int color = Color.argb(255, red, green, blue);
-        title.setTextColor(color);
-        text.setTextColor(color);
+        if (rgbColor != null) {
+            red = outlineItem.getColor().getRed();
+            green = outlineItem.getColor().getGreen();
+            blue = outlineItem.getColor().getBlue();
 
-        AndroidFont font = outlineItem.getFont();
+            final int color = Color.argb(255, red, green, blue);
+            title.setTextColor(color);
+            text.setTextColor(color);
+        }
+
+        final AndroidFont font = outlineItem.getFont();
 
         if (font != null) {
             text.setTextSize(TypedValue.COMPLEX_UNIT_PX, FontUtils.pointsToPixels(font.getSizeInPoints()));

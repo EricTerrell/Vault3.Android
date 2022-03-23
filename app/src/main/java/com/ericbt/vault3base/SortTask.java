@@ -59,6 +59,8 @@ public class SortTask extends AsyncTask<SortTaskParameters, Void, SortTaskResult
 			ExitApplication.exit();
 		}
 		else {
+			Globals.getApplication().getVaultDocument().setDirty(true);
+			
 			parameters.getVault3Activity().setEnabled(true);
 			
 			if (result.getException() != null) {

@@ -55,7 +55,16 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Save Changes"
+            android:text="Close"
+            android:layout_gravity="fill_horizontal"
+            android:id="@+id/Close"
+            android:enabled="false"
+            >
+        </Button>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save"
             android:layout_gravity="fill_horizontal"
             android:id="@+id/Save"
             android:enabled="false"
