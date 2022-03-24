@@ -23,6 +23,9 @@ package com.ericbt.vault3base;
 import android.app.Activity;
 import android.os.Bundle;
 
+import com.ericbt.vault3base.async_tasks.upgrade_vault_document.UpgradeVaultDocumentTask;
+import com.ericbt.vault3base.async_tasks.upgrade_vault_document.UpgradeVaultDocumentTaskParameters;
+
 public class UpgradeVaultDocumentActivity extends Activity {
 	public static final int RESULT_EXCEPTION = RESULT_FIRST_USER;
 	

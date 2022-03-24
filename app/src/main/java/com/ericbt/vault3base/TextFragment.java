@@ -41,6 +41,11 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.ericbt.vault3base.async_tasks.update_font.UpdateFontTask;
+import com.ericbt.vault3base.async_tasks.update_font.UpdateFontTaskParameters;
+import com.ericbt.vault3base.async_tasks.update_outline_item.UpdateOutlineItemTask;
+import com.ericbt.vault3base.async_tasks.update_outline_item.UpdateOutlineItemTaskParameters;
+
 import fonts.AndroidFont;
 import fonts.FontList;
 

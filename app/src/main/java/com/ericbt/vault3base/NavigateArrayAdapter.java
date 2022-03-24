@@ -30,6 +30,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTask;
+import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTaskParameters;
+
 public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 	private OutlineItem outlineItem;
 	private final Context context;

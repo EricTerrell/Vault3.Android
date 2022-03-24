@@ -8,7 +8,8 @@
     <string name="online_help_url">http://www.ericbt.com/Vault3ForAndroid</string>
     <string name="cloud_sync_url">http://www.ericbt.com/Vault3ForAndroid/misc#cloudsync</string>
     <string name="app_version"></string>
-    <string name="current_doc_must_be_closed">Current document must be closed before it can be removed or renamed.</string>
+
+    <string name="current_doc_must_be_closed">Close document \"%s\" before removing, renaming, or copying.</string>
 
     <string name="permissions">Permissions</string>
     <string name="permissions_not_granted">Permissions were not granted.\n\nVault 3 will not function correctly until permissions are granted.\n\nPermissions are necessary to read and write Vault 3 documents.\n\nClick \"Request Permissions\" to grant permissions.</string>

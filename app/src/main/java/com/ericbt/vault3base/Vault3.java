@@ -47,6 +47,29 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.ericbt.vault3base.async_tasks.add_item.AddItemTask;
+import com.ericbt.vault3base.async_tasks.add_item.AddItemTaskParameters;
+import com.ericbt.vault3base.async_tasks.delete_all_temp_files.DeleteAllTempFilesTask;
+import com.ericbt.vault3base.async_tasks.delete_all_temp_files.DeleteAllTempFilesTaskParameters;
+import com.ericbt.vault3base.async_tasks.indent_item.IndentItemTask;
+import com.ericbt.vault3base.async_tasks.indent_item.IndentItemTaskParameters;
+import com.ericbt.vault3base.async_tasks.move_item_down.MoveItemDownTask;
+import com.ericbt.vault3base.async_tasks.move_item_down.MoveItemDownTaskParameters;
+import com.ericbt.vault3base.async_tasks.move_item.MoveItemTask;
+import com.ericbt.vault3base.async_tasks.move_item.MoveItemTaskParameters;
+import com.ericbt.vault3base.async_tasks.move_item_up.MoveItemUpTask;
+import com.ericbt.vault3base.async_tasks.move_item_up.MoveItemUpTaskParameters;
+import com.ericbt.vault3base.async_tasks.remove_item_and_children.RemoveItemAndChildrenTask;
+import com.ericbt.vault3base.async_tasks.remove_item_and_children.RemoveItemAndChildrenTaskParameters;
+import com.ericbt.vault3base.async_tasks.save_changes.SaveChangesTask;
+import com.ericbt.vault3base.async_tasks.save_changes.SaveChangesTaskParameters;
+import com.ericbt.vault3base.async_tasks.sort.SortTask;
+import com.ericbt.vault3base.async_tasks.sort.SortTaskParameters;
+import com.ericbt.vault3base.async_tasks.unindent_item.UnindentItemTask;
+import com.ericbt.vault3base.async_tasks.unindent_item.UnindentItemTaskParameters;
+import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTask;
+import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTaskParameters;
+
 import java.io.File;
 
 import commonCode.VaultDocumentVersion;
@@ -333,8 +356,6 @@ public class Vault3 extends AsyncTaskActivity {
 		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
 
 		if (vaultDocument != null) {
-			final String vaultDocumentPath = vaultDocument.getDatabase().getPath();
-
 			vaultDocument.close();
 
 			updateGUIWhenCurrentDocumentOpenedOrClosed(false);
@@ -348,17 +369,14 @@ public class Vault3 extends AsyncTaskActivity {
 
 			enable(false);
 
-			final DeleteDocumentFileTaskParameters deleteDocumentFileTaskParameters =
-					new DeleteDocumentFileTaskParameters(null, vaultDocumentPath, this);
-
-			new DeleteDocumentFileTask().execute(deleteDocumentFileTaskParameters);
+			new DeleteAllTempFilesTask().execute(new DeleteAllTempFilesTaskParameters(this));
 		}
 	}
 
 	private void conditionallyCloseDocument() {
 		if (Globals.getApplication().getVaultDocument().isDirty()) {
 			new AlertDialog.Builder(this)
-					.setTitle(String.format("Close"))
+					.setTitle("Close")
 					.setMessage("Closing will discard changes. Close current document?")
 					.setPositiveButton("Yes", (dialog, which) -> {
 						closeDocument();

@@ -7,6 +7,10 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.RadioButton;
 
+import com.ericbt.vault3base.Globals;
+import com.ericbt.vault3base.R;
+import com.ericbt.vault3base.StringLiterals;
+
 public class MoveItemHereActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

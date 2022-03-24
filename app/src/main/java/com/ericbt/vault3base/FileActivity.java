@@ -39,8 +39,22 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.documentfile.provider.DocumentFile;
+
+import com.ericbt.vault3base.async_tasks.change_password.ChangePasswordTask;
+import com.ericbt.vault3base.async_tasks.change_password.ChangePasswordTaskParameters;
+import com.ericbt.vault3base.async_tasks.clone_document.CloneDocumentFileTask;
+import com.ericbt.vault3base.async_tasks.clone_document.CloneDocumentFileTaskParameters;
+import com.ericbt.vault3base.async_tasks.create_database.CreateDatabaseTask;
+import com.ericbt.vault3base.async_tasks.create_database.CreateDatabaseTaskParameters;
+import com.ericbt.vault3base.async_tasks.delete_document_file.DeleteDocumentFileTask;
+import com.ericbt.vault3base.async_tasks.delete_document_file.DeleteDocumentFileTaskParameters;
+import com.ericbt.vault3base.async_tasks.find_vault_files.FindVaultFilesTask;
+import com.ericbt.vault3base.async_tasks.find_vault_files.FindVaultFilesTaskParameters;
+import com.ericbt.vault3base.async_tasks.open_document_file.OpenDocumentFileTask;
+import com.ericbt.vault3base.async_tasks.open_document_file.OpenDocumentFileTaskParameters;
 
 public class FileActivity extends AsyncTaskActivity {
 	private FileArrayAdapter arrayAdapter;
@@ -96,11 +110,7 @@ public class FileActivity extends AsyncTaskActivity {
 			// Close Vault database
 			final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
 
-			String previousDatabaseFilePath = null;
-
 			if (vaultDocument != null) {
-				previousDatabaseFilePath = vaultDocument.getDatabase().getPath();
-
 				vaultDocument.close();
 
 				Globals.getApplication().setVaultDocument(null);
@@ -110,13 +120,12 @@ public class FileActivity extends AsyncTaskActivity {
 
 			VaultPreferenceActivity.setSelectedFileUri(selectedFile.getUri());
 
-			final CopyDocumentFileTaskParameters params = new
-					CopyDocumentFileTaskParameters(selectedFile.getUri(),
+			final OpenDocumentFileTaskParameters params = new
+					OpenDocumentFileTaskParameters(selectedFile.getUri(),
 					selectedFile.getName(),
-					this,
-					previousDatabaseFilePath);
+					this);
 
-			new CopyDocumentFileTask().execute(params);
+			new OpenDocumentFileTask().execute(params);
 		});
 
 		newButton = findViewById(R.id.New);
@@ -242,10 +251,18 @@ public class FileActivity extends AsyncTaskActivity {
 				// If the selected item corresponds to the current Vault 3 file,
 				// Don't allow remove or rename. In this case user has to close the file first.
 				if (selectedFileName.equals(currentFileName)) {
-					menu.setHeaderTitle(getString(R.string.current_doc_must_be_closed));
+					final int[] menuItems = new int[]
+							{ R.id.RemoveMenuItem, R.id.RenameMenuItem, R.id.CopyMenuItem };
 
-					menu.findItem(R.id.RemoveMenuItem).setEnabled(false);
-					menu.findItem(R.id.RenameMenuItem).setEnabled(false);
+					for (final int menuItem : menuItems) {
+						menu.findItem(menuItem).setEnabled(false);
+					}
+
+					final String message = String.format(
+							getString(R.string.current_doc_must_be_closed),
+							currentFileName);
+
+					Toast.makeText(this, message, Toast.LENGTH_LONG).show();
 				}
 			}
 		}

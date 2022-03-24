@@ -33,6 +33,9 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.ericbt.vault3base.async_tasks.search.SearchTask;
+import com.ericbt.vault3base.async_tasks.search.SearchTaskParameters;
+
 public class SearchActivity extends AsyncTaskActivity {
 	private SearchResultsArrayAdapter searchResultsAdapter;
 	private Button cancelButton, searchButton, searchOptions;

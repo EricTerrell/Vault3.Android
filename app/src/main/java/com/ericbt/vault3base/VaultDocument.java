@@ -44,6 +44,8 @@ import android.util.SparseBooleanArray;
 
 import com.ericbt.vault3base.Search.SearchFields;
 import com.ericbt.vault3base.Search.SearchScope;
+import com.ericbt.vault3base.async_tasks.search.SearchTask;
+
 import commonCode.Base64Coder;
 import commonCode.VaultDocumentVersion;
 import commonCode.VaultException;

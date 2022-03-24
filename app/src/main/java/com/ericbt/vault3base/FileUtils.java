@@ -20,12 +20,15 @@
 
 package com.ericbt.vault3base;
 
+import android.content.Context;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Locale;
 
 public class FileUtils {
 	public static long copy(InputStream inputStream, OutputStream outputStream) throws IOException {
@@ -72,5 +75,38 @@ public class FileUtils {
 		}
 
 		return deleted;
+	}
+
+	public static void deleteAllTempFiles(Context context) {
+		final File folder = DocumentFileUtils.getTempFolderPath(context);
+
+		Log.i(StringLiterals.LogTag, "FileUtils.deleteAllTempFiles");
+
+		for (final File file : folder.listFiles(new TempFileFilter())) {
+			try {
+				final boolean deleted = file.delete();
+
+				Log.i(StringLiterals.LogTag,
+						String.format(
+								"FileUtils.deleteAllTempFiles: Deleting %s",
+								file.getAbsolutePath()));
+
+				if (!deleted) {
+					Log.e(StringLiterals.LogTag, String.format("FileUtils.deleteAllTempFiles: cannot delete %s", file.getPath()));
+				}
+			} catch (Throwable ex) {
+				Log.e(StringLiterals.LogTag, String.format("FileUtils.deleteAllTempFiles: cannot delete %s ex: %s", file.getPath(), ex));
+			}
+		}
+	}
+
+	private static class TempFileFilter implements FileFilter {
+		@Override
+		public boolean accept(File pathname) {
+			final String lowerCasePathname = pathname.getPath().toLowerCase(Locale.ROOT);
+
+			return lowerCasePathname.endsWith(StringLiterals.FileType) ||
+					lowerCasePathname.endsWith(StringLiterals.JournalSuffix);
+		}
 	}
 }
