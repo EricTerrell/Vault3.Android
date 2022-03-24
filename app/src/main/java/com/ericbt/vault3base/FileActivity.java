@@ -96,7 +96,11 @@ public class FileActivity extends AsyncTaskActivity {
 			// Close Vault database
 			final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
 
+			String previousDatabaseFilePath = null;
+
 			if (vaultDocument != null) {
+				previousDatabaseFilePath = vaultDocument.getDatabase().getPath();
+
 				vaultDocument.close();
 
 				Globals.getApplication().setVaultDocument(null);
@@ -109,7 +113,8 @@ public class FileActivity extends AsyncTaskActivity {
 			final CopyDocumentFileTaskParameters params = new
 					CopyDocumentFileTaskParameters(selectedFile.getUri(),
 					selectedFile.getName(),
-					this);
+					this,
+					previousDatabaseFilePath);
 
 			new CopyDocumentFileTask().execute(params);
 		});
@@ -225,6 +230,24 @@ public class FileActivity extends AsyncTaskActivity {
 			inflater.inflate(R.menu.file_context_menu, menu);
 
 			menu.setHeaderTitle(selectedFile.getName());
+
+			final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+
+			if (vaultDocument != null) {
+				final String currentFileName =
+						new File(vaultDocument.getDatabase().getPath()).getName();
+				final String selectedFileName =
+						DocumentFileUtils.getFileName(selectedFile.getUri());
+
+				// If the selected item corresponds to the current Vault 3 file,
+				// Don't allow remove or rename. In this case user has to close the file first.
+				if (selectedFileName.equals(currentFileName)) {
+					menu.setHeaderTitle(getString(R.string.current_doc_must_be_closed));
+
+					menu.findItem(R.id.RemoveMenuItem).setEnabled(false);
+					menu.findItem(R.id.RenameMenuItem).setEnabled(false);
+				}
+			}
 		}
 	}
 
@@ -255,11 +278,16 @@ public class FileActivity extends AsyncTaskActivity {
 		switch (requestCode) {
 			case REMOVE_DOCUMENT: {
 				if (resultCode == RESULT_OK) {
-					final Uri documentUri = Uri.parse(data.getStringExtra(StringLiterals.DocumentUri));
+					enable(false);
 
-					DocumentFileUtils.removeDocumentAndTempFile(this, documentUri);
+					final Uri documentUri =
+							Uri.parse(data.getStringExtra(StringLiterals.DocumentUri));
 
-					closeActiveDocument();
+					final DeleteDocumentFileTaskParameters deleteDocumentFileTaskParameters =
+							new DeleteDocumentFileTaskParameters(
+									documentUri, null,this);
+
+					new DeleteDocumentFileTask().execute(deleteDocumentFileTaskParameters);
 				}
 				break;
 			}

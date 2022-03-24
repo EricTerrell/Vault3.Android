@@ -124,9 +124,12 @@ public class Vault3 extends AsyncTaskActivity {
 			saveButton.setOnClickListener(v -> {
 				setEnabled(false);
 
+				final String currentFileName =
+		new File(Globals.getApplication().getVaultDocument().getDatabase().getPath()).getName();
+
 				final SaveChangesTaskParameters saveChangesTaskParameters =
 						new SaveChangesTaskParameters(
-								DocumentFileUtils.getCurrentFileName(),
+								currentFileName,
 								VaultPreferenceActivity.getSelectedFileUri(),
 								this);
 
@@ -328,20 +331,28 @@ public class Vault3 extends AsyncTaskActivity {
 		Log.i(StringLiterals.LogTag, "Vault3.closeDocument");
 
 		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
-		vaultDocument.close();
 
-		updateGUIWhenCurrentDocumentOpenedOrClosed(false);
-		Globals.getApplication().setVaultDocument(null);
+		if (vaultDocument != null) {
+			final String vaultDocumentPath = vaultDocument.getDatabase().getPath();
 
-		if (textFragment != null) {
-			textFragment.update(false, new OutlineItem());
+			vaultDocument.close();
+
+			updateGUIWhenCurrentDocumentOpenedOrClosed(false);
+			Globals.getApplication().setVaultDocument(null);
+
+			if (textFragment != null) {
+				textFragment.update(false, new OutlineItem());
+			}
+
+			invalidateOptionsMenu();
+
+			enable(false);
+
+			final DeleteDocumentFileTaskParameters deleteDocumentFileTaskParameters =
+					new DeleteDocumentFileTaskParameters(null, vaultDocumentPath, this);
+
+			new DeleteDocumentFileTask().execute(deleteDocumentFileTaskParameters);
 		}
-
-		invalidateOptionsMenu();
-
-		// Go back to FileActivity - there is nothing to do in the main activity now that
-		// the active file as been closed.
-		navigateToFilesActivity();
 	}
 
 	private void conditionallyCloseDocument() {
@@ -470,7 +481,8 @@ public class Vault3 extends AsyncTaskActivity {
 				}
 					
 				if (vaultDocument.isEncrypted) {
-					password = password != null ? password : Globals.getApplication().getPasswordCache().get(dbFilePath);
+					password = password != null ? password :
+							Globals.getApplication().getPasswordCache().get(dbFilePath);
 					
 					if (vaultDocument.setPassword(password)) {
 						Globals.getApplication().setVaultDocument(vaultDocument, this);
@@ -480,8 +492,10 @@ public class Vault3 extends AsyncTaskActivity {
 						displayVaultDocument(selectedOutlineItemID);
 					}
 					else {
-						Intent intent = new Intent(Vault3.this, PasswordPromptActivity.class);
-						intent.putExtra(StringLiterals.DBPath, vaultDocument.getDatabase().getPath());
+						final Intent intent =
+								new Intent(Vault3.this, PasswordPromptActivity.class);
+						intent.putExtra(StringLiterals.DBPath,
+								vaultDocument.getDatabase().getPath());
 			            startActivityForResult(intent, PASSWORD_PROMPT);     
 					}
 				}
@@ -1006,7 +1020,7 @@ public class Vault3 extends AsyncTaskActivity {
 		Log.i(StringLiterals.LogTag, "Vault3.onActivityResult end");
 	}
 
-	private void navigateToFilesActivity() {
+	public void navigateToFilesActivity() {
 		if (VaultPreferenceActivity.getUserAcceptedTerms()) {
 			final Intent fileActivity = new Intent(this, FileActivity.class);
 			startActivityForResult(fileActivity, FILE_ACTIVITY_RESULT);

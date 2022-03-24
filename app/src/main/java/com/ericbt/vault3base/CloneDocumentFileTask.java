@@ -31,13 +31,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class CloneDocumentFileTask extends AsyncTask<CloneDocumentFileTaskParameters, Void, CloneDocumentFileTaskResult> {
-	@Override
-	protected void onPreExecute() {
-		super.onPreExecute();
-
-		Log.i(StringLiterals.LogTag, "CloneDocumentFileTask: onPreExecute");
-	}
-
 	private CloneDocumentFileTaskParameters parameters;
 	
 	@Override

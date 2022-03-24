@@ -35,13 +35,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class CopyDocumentFileTask extends AsyncTask<CopyDocumentFileTaskParameters, Void, CopyDocumentFileTaskResult> {
-	@Override
-	protected void onPreExecute() {
-		super.onPreExecute();
-
-		Log.i(StringLiterals.LogTag, "CopyDocumentFileTask: onPreExecute");
-	}
-
 	private CopyDocumentFileTaskParameters parameters;
 	
 	@Override
@@ -51,6 +44,17 @@ public class CopyDocumentFileTask extends AsyncTask<CopyDocumentFileTaskParamete
 		final CopyDocumentFileTaskResult result = new CopyDocumentFileTaskResult();
 		
 		try {
+			if (parameters.getPreviousDatabaseFilePath() != null) {
+				final boolean deleted =
+						FileUtils.deleteDatabaseFile(parameters.getPreviousDatabaseFilePath());
+
+				if (!deleted) {
+					Log.e(StringLiterals.LogTag, String.format(
+							"CopyDocumentFileTask: cannot delete previous database file %s",
+							parameters.getPreviousDatabaseFilePath()));
+				}
+			}
+
 			final String destFilePath =
 					copyDocumentFile(parameters.getFileActivity(), parameters.getSourceFileUri(),
 					parameters.getSourceFileName());

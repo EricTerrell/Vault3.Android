@@ -37,9 +37,15 @@ public class CopyDocumentFileTaskParameters {
 
 	public FileActivity getFileActivity() { return fileActivity; }
 
-	public CopyDocumentFileTaskParameters(Uri sourceFileUri, String sourceFileName, FileActivity fileActivity) {
+	private final String previousDatabaseFilePath;
+
+	public String getPreviousDatabaseFilePath() { return previousDatabaseFilePath; }
+
+	public CopyDocumentFileTaskParameters(Uri sourceFileUri, String sourceFileName,
+										  FileActivity fileActivity, String previousDatabaseFilePath) {
 		this.sourceFileUri = sourceFileUri;
 		this.sourceFileName = sourceFileName;
 		this.fileActivity = fileActivity;
+		this.previousDatabaseFilePath = previousDatabaseFilePath;
 	}
 }

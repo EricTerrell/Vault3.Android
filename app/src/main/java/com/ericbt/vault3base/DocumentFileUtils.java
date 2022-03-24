@@ -27,7 +27,6 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,9 +37,7 @@ public class DocumentFileUtils {
         return context.getFilesDir();
     }
 
-    public static String getCurrentFileName() {
-        final Uri selectedFileUri = VaultPreferenceActivity.getSelectedFileUri();
-
+    public static String getFileName(Uri selectedFileUri) {
         final String[] segments = selectedFileUri.getPath().split("/");
 
         return segments[segments.length - 1];
@@ -66,23 +63,41 @@ public class DocumentFileUtils {
         return segments[segments.length - 1];
     }
 
-    public static void removeDocumentAndTempFile(Context context, Uri documentUri) {
-        try {
-            DocumentsContract.deleteDocument(context.getContentResolver(), documentUri);
+    public static boolean removeDocumentAndTempFile(Context context, Uri documentUri) {
+        boolean deleted = false;
 
-            final String tempFileName = String.format(
+        try {
+            deleted = DocumentsContract.deleteDocument(context.getContentResolver(), documentUri);
+
+            final String tempFilePath = String.format(
                     "%s/%s",
                     DocumentFileUtils.getTempFolderPath(context),
                     DocumentFileUtils.getName(documentUri.toString())
             );
 
-            final boolean deleted = new File(tempFileName).delete();
+            final boolean tempFileDeleted = new File(tempFilePath).delete();
 
-            if (!deleted) {
-                Log.e(StringLiterals.LogTag, String.format("Could not delete %s", tempFileName));
+            if (!tempFileDeleted) {
+                Log.e(StringLiterals.LogTag, String.format("Could not delete %s", tempFilePath));
             }
-        } catch (FileNotFoundException ex) {
+
+            final String journalPath =
+                    String.format("%s%s", tempFilePath, StringLiterals.JournalSuffix);
+
+            final File journalFile = new File(journalPath);
+
+            if (journalFile.exists()) {
+                final boolean journalFileDeleted = journalFile.delete();
+
+                if (!journalFileDeleted) {
+                    Log.w(StringLiterals.LogTag,
+                            String.format("Could not delete %s", journalFile.getPath()));
+                }
+            }
+        } catch (Throwable ex) {
             ex.printStackTrace();
         }
+
+        return deleted;
     }
 }

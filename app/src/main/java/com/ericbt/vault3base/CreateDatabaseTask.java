@@ -44,6 +44,9 @@ public class CreateDatabaseTask extends AsyncTask<CreateDatabaseTaskParameters, 
 					parameters.getFileActivity(),
 					new File(dbPath).getName(),
 					parameters.getSourceFileUri());
+
+			// We don't need to keep the temporary or journal files.
+			FileUtils.deleteDatabaseFile(dbPath);
 		}
 		catch (Throwable ex) {
 			Log.e(StringLiterals.LogTag, String.format("CreateDatabaseTask: cannot create db file %s exception %s", dbPath, ex.getMessage()));

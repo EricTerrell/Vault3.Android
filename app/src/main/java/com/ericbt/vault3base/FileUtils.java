@@ -20,6 +20,9 @@
 
 package com.ericbt.vault3base;
 
+import android.util.Log;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,5 +41,36 @@ public class FileUtils {
 		}
 
 		return bytes;
+	}
+
+	public static boolean deleteDatabaseFile(String databasePath) {
+		boolean deleted = false;
+
+		try {
+			final File databaseFile = new File(databasePath);
+
+			// Delete database file
+			deleted = databaseFile.delete();
+
+			final String journalFilePath =
+					String.format("%s%s", databasePath, StringLiterals.JournalSuffix);
+
+			final File journalFile = new File(journalFilePath);
+
+			if (journalFile.exists()) {
+				// Delete journal file
+				final boolean journalFileDeleted = journalFile.delete();
+
+				if (!journalFileDeleted) {
+					Log.w(StringLiterals.LogTag,
+							String.format("Could not delete %s", journalFile.getPath()));
+				}
+			}
+		} catch (Throwable ex) {
+			Log.w(StringLiterals.LogTag,
+					String.format("Could not delete %s", databasePath));
+		}
+
+		return deleted;
 	}
 }
