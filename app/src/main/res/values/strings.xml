@@ -82,6 +82,7 @@
     </string-array>
     <string-array name="ColorEntries">
         <item>Black</item>
+        <item>White</item>
         <item>Blue</item>
         <item>Red</item>
         <item>Cyan</item>
@@ -95,6 +96,7 @@
     <string-array name="ColorEntriesWithDefault">
         <item>Default</item>
         <item>Black</item>
+        <item>White</item>
         <item>Blue</item>
         <item>Red</item>
         <item>Cyan</item>

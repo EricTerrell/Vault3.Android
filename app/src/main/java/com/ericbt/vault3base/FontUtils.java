@@ -39,6 +39,7 @@ public class FontUtils {
 		colorMap = new HashMap<>();
 		
 		colorMap.put("Black", Color.BLACK);
+		colorMap.put("White", Color.WHITE);
 		colorMap.put("Blue", Color.BLUE);
 		colorMap.put("Cyan", Color.CYAN);
 		colorMap.put("Dark Gray", Color.DKGRAY);
