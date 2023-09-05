@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ericbt.vault3base"
-    android:versionCode="15177"
-    android:versionName="1.77">
+    android:versionCode="15181"
+    android:versionName="1.81">
 
     <application
         android:name="com.ericbt.vault3base.VaultApplication"
@@ -10,7 +10,6 @@
         android:theme="@style/AppBaseTheme"
         android:label="@string/app_name"
         android:allowBackup="false"
-        android:requestLegacyExternalStorage="true"
         >
         <activity
             android:name="com.ericbt.vault3base.Vault3"

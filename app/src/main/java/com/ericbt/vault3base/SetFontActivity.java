@@ -1,21 +1,21 @@
 /*
   Vault 3
-  (C) Copyright 2022, Eric Bergman-Terrell
+  (C) Copyright 2023, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
-    Vault 3 is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+  Vault 3 is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-    Vault 3 is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  Vault 3 is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Vault 3.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License
+  along with Vault 3.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package com.ericbt.vault3base;
@@ -172,64 +172,63 @@ public class SetFontActivity extends Activity {
 	}
 
 	private void setUIForCurrentFontAndColor() {
-		String fontName = getIntent().getExtras().getString(StringLiterals.FontName);
+		final String fontName = getIntent().getExtras().getString(StringLiterals.FontName);
 
-        switch (fontName) {
-            case Sans:
-                fontSpinner.setSelection(0);
-                break;
-            case Serif:
-                fontSpinner.setSelection(1);
-                break;
-            case Monospace:
-                fontSpinner.setSelection(2);
-                break;
-        }
-		
-		int fontSize = (int) getIntent().getExtras().getFloat(StringLiterals.FontSizeInPoints);
-		
-		for (int i = 0; i < fontSizeSpinner.getCount(); i++) {
-			String currentItem = (String) fontSizeSpinner.getItemAtPosition(i);
-
-			String[] sizeParts = currentItem.split(" ");
-			int currentSize = Integer.parseInt(sizeParts[0]);
-			
-			if (currentSize == fontSize) {
-				fontSizeSpinner.setSelection(i);
-				break;
+		if (fontName != null) {
+			switch (fontName) {
+				case Sans:
+					fontSpinner.setSelection(0);
+					break;
+				case Serif:
+					fontSpinner.setSelection(1);
+					break;
+				case Monospace:
+					fontSpinner.setSelection(2);
+					break;
 			}
-		}
-		
-		int fontStyle = getIntent().getExtras().getInt(StringLiterals.FontStyle);
-		
-		if (fontStyle == Typeface.NORMAL) {
-			fontStyleSpinner.setSelection(0);
-		}
-		else if (fontStyle == Typeface.BOLD) {
-			fontStyleSpinner.setSelection(1);
-		}
-		else if (fontStyle == Typeface.ITALIC) {
-			fontStyleSpinner.setSelection(2);
-		}
-		else if (fontStyle == Typeface.BOLD_ITALIC) {
-			fontStyleSpinner.setSelection(3);
-		}
 
-		int red = getIntent().getExtras().getInt(StringLiterals.Red);
-		int green = getIntent().getExtras().getInt(StringLiterals.Green);
-		int blue = getIntent().getExtras().getInt(StringLiterals.Blue);
-		
-		RGBColor initialColor = new RGBColor(red, green, blue);
-		
-		for (int i = 0; i < colorSpinner.getCount(); i++) {
-			String colorName = (String) colorSpinner.getItemAtPosition(i);
-			
-			int color = FontUtils.getColor(colorName);
-			RGBColor currentColor = new RGBColor(Color.red(color), Color.green(color), Color.blue(color));
-			
-			if (initialColor.equals(currentColor)) {
-				colorSpinner.setSelection(i);
-				break;
+			int fontSize = (int) getIntent().getExtras().getFloat(StringLiterals.FontSizeInPoints);
+
+			for (int i = 0; i < fontSizeSpinner.getCount(); i++) {
+				String currentItem = (String) fontSizeSpinner.getItemAtPosition(i);
+
+				String[] sizeParts = currentItem.split(" ");
+				int currentSize = Integer.parseInt(sizeParts[0]);
+
+				if (currentSize == fontSize) {
+					fontSizeSpinner.setSelection(i);
+					break;
+				}
+			}
+
+			int fontStyle = getIntent().getExtras().getInt(StringLiterals.FontStyle);
+
+			if (fontStyle == Typeface.NORMAL) {
+				fontStyleSpinner.setSelection(0);
+			} else if (fontStyle == Typeface.BOLD) {
+				fontStyleSpinner.setSelection(1);
+			} else if (fontStyle == Typeface.ITALIC) {
+				fontStyleSpinner.setSelection(2);
+			} else if (fontStyle == Typeface.BOLD_ITALIC) {
+				fontStyleSpinner.setSelection(3);
+			}
+
+			int red = getIntent().getExtras().getInt(StringLiterals.Red);
+			int green = getIntent().getExtras().getInt(StringLiterals.Green);
+			int blue = getIntent().getExtras().getInt(StringLiterals.Blue);
+
+			RGBColor initialColor = new RGBColor(red, green, blue);
+
+			for (int i = 0; i < colorSpinner.getCount(); i++) {
+				String colorName = (String) colorSpinner.getItemAtPosition(i);
+
+				int color = FontUtils.getColor(colorName);
+				RGBColor currentColor = new RGBColor(Color.red(color), Color.green(color), Color.blue(color));
+
+				if (initialColor.equals(currentColor)) {
+					colorSpinner.setSelection(i);
+					break;
+				}
 			}
 		}
 	}
