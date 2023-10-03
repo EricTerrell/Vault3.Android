@@ -35,6 +35,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.ListView;
@@ -105,27 +106,7 @@ public class FileActivity extends AsyncTaskActivity {
 		vaultFilesListView.setAdapter(arrayAdapter);
 		
 		vaultFilesListView.setOnItemClickListener((parent, view, position, id) -> {
-			setEnabled(false);
-
-			// Close Vault database
-			final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
-
-			if (vaultDocument != null) {
-				vaultDocument.close();
-
-				Globals.getApplication().setVaultDocument(null);
-			}
-
-			final DocumentFile selectedFile = (DocumentFile) parent.getAdapter().getItem(position);
-
-			VaultPreferenceActivity.setSelectedFileUri(selectedFile.getUri());
-
-			final OpenDocumentFileTaskParameters params = new
-					OpenDocumentFileTaskParameters(selectedFile.getUri(),
-					selectedFile.getName(),
-					this);
-
-			new OpenDocumentFileTask().execute(params);
+			conditionallyOpenNewDocument(parent, position);
 		});
 
 		newButton = findViewById(R.id.New);
@@ -441,5 +422,49 @@ public class FileActivity extends AsyncTaskActivity {
 		returnData.putExtra(StringLiterals.Action, StringLiterals.Close);
 		setResult(RESULT_OK, returnData);
 		finish();
+	}
+
+	private void openNewDocument(AdapterView<?> parent, int position) {
+		setEnabled(false);
+
+		// Close Vault database
+		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+
+		if (vaultDocument != null) {
+			vaultDocument.close();
+
+			Globals.getApplication().setVaultDocument(null);
+		}
+
+		final DocumentFile selectedFile = (DocumentFile) parent.getAdapter().getItem(position);
+
+		VaultPreferenceActivity.setSelectedFileUri(selectedFile.getUri());
+
+		final OpenDocumentFileTaskParameters params = new
+				OpenDocumentFileTaskParameters(selectedFile.getUri(),
+				selectedFile.getName(),
+				this);
+
+		new OpenDocumentFileTask().execute(params);
+	}
+
+	private void conditionallyOpenNewDocument(AdapterView<?> parent, int position) {
+		final VaultApplication application = Globals.getApplication();
+
+		if (application != null && application.getVaultDocument() != null &&
+				Globals.getApplication().getVaultDocument().isDirty()) {
+			new AlertDialog.Builder(this)
+					.setTitle("Open New Document")
+					.setMessage("Opening a new document will discard unsaved changes in current document. Open new document?")
+					.setPositiveButton("Yes", (dialog, which) -> {
+						openNewDocument(parent, position);
+					})
+					.setNegativeButton("No", null)
+					.setCancelable(false)
+					.create()
+					.show();
+		} else {
+			openNewDocument(parent, position);
+		}
 	}
 }
