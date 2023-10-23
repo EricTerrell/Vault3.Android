@@ -136,13 +136,14 @@ public class ChangePasswordActivity extends Activity {
 				newPassword = newPassword.toUpperCase();
 			}
 
-			Intent returnData = new Intent();
+			final Intent returnData = new Intent();
 			returnData.putExtra(StringLiterals.NewPassword, newPassword);
 			setResult(RESULT_OK, returnData);
+
 			finish();
 		});
 
-		Button cancelButton = findViewById(R.id.CancelButton);
+		final Button cancelButton = findViewById(R.id.CancelButton);
 
 		cancelButton.setOnClickListener(v -> {
 			setResult(RESULT_CANCELED);

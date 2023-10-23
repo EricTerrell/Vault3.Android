@@ -21,9 +21,12 @@
 package com.ericbt.vault3base;
 
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,11 +35,15 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import android.util.Log;
 
 import commonCode.Base64Coder;
+import commonCode.VaultDocumentVersion;
 
 /**
  * @author Eric Bergman-Terrell
@@ -53,22 +60,36 @@ public class CryptoUtils {
 	private static final String keyAlgorithm = "AES";
 	private static final String messageDigestAlgorithm = "SHA-512";
 	private static final int keyBits = 128;
-	
+
+	private static class DocumentVersion1_3Constants {
+		private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+		private static final int KEY_LENGTH = 256;
+
+		private static final int SALT_LENGTH = 16;
+		private static final int IV_LENGTH = 16;
+
+		private static final int KEY_ITERATIONS = 1_000;
+
+		private static final String KEY_ALGORITHM = "PBKDF2WithHmacSHA256";
+
+		private static final String KEY_ALGORITHM_SHORT = "AES";
+	}
+
 	private static byte[] getPasswordMessageDigest(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         return MessageDigest.getInstance(messageDigestAlgorithm).digest(password.getBytes("UTF-8"));
 	}
 
-	public static SecretKey createSecretKey(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-		long startTime = System.currentTimeMillis();
+	private static SecretKey createSecretKey(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+		final long startTime = System.currentTimeMillis();
 		
-        int keyLengthBytes = keyBits / 8;
+        final int keyLengthBytes = keyBits / 8;
         
 		byte[] passwordMessageDigest = getPasswordMessageDigest(password);
 		
 		Log.i(StringLiterals.LogTag, String.format("CryptoUtils.createSecretKey: key length (bits): %d, key length (bytes): %d, algorithm: %s message digest length: %d", 
         										   keyBits, keyLengthBytes, keyAlgorithm, passwordMessageDigest.length));
         
-		List<Byte> passwordBytes = new ArrayList<>();
+		final List<Byte> passwordBytes = new ArrayList<>();
 		
 		for (byte passwordByte : passwordMessageDigest) {
 			passwordBytes.add(passwordByte);
@@ -78,24 +99,53 @@ public class CryptoUtils {
 			passwordBytes.add((byte) 0);
 		}
 		
-		byte[] passwordByteArray = new byte[keyLengthBytes];
+		final byte[] passwordByteArray = new byte[keyLengthBytes];
 		
 		for (int i = 0; i < keyLengthBytes; i++) {
 			passwordByteArray[i] = passwordBytes.get(i);
 		} 
 		
-		SecretKey secretKey = new SecretKeySpec(passwordByteArray, keyAlgorithm);
+		final SecretKey secretKey = new SecretKeySpec(passwordByteArray, keyAlgorithm);
         
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("CryptoUtils.createSecretKey: %d ms", elapsedMilliseconds));
 
 		return secretKey;
 	}
 
-	public static Cipher createEncryptionCipher(SecretKey secretKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+	public static byte[] randomBytes(int nBytes) {
+		final byte[] result = new byte[nBytes];
+		new SecureRandom().nextBytes(result);
+
+		return result;
+	}
+
+	public static byte[] createSalt() {
+		return randomBytes(DocumentVersion1_3Constants.SALT_LENGTH);
+	}
+
+	public static byte[] createIV() {
+		return randomBytes(DocumentVersion1_3Constants.IV_LENGTH);
+	}
+
+	private static SecretKey createSecretKeyVaultDocumentVersion_1_3(String password, byte[] salt)
+			throws InvalidKeySpecException, NoSuchAlgorithmException {
+		final PBEKeySpec pbeKeySpec = new PBEKeySpec(password.toCharArray(), salt,
+				DocumentVersion1_3Constants.KEY_ITERATIONS,
+				DocumentVersion1_3Constants.KEY_LENGTH);
+
+		final SecretKey pbeKey = SecretKeyFactory
+				.getInstance(DocumentVersion1_3Constants.KEY_ALGORITHM)
+				.generateSecret(pbeKeySpec);
+
+		return new SecretKeySpec(pbeKey.getEncoded(),
+				DocumentVersion1_3Constants.KEY_ALGORITHM_SHORT);
+	}
+
+	private static Cipher createEncryptionCipher(SecretKey secretKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
 		long startTime = System.currentTimeMillis();
 
-		Cipher cipher = Cipher.getInstance(cipherAlgorithm);
+		final Cipher cipher = Cipher.getInstance(cipherAlgorithm);
 
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 		
@@ -104,26 +154,57 @@ public class CryptoUtils {
 
 		return cipher;
 	}
-	
-	public static Cipher createDecryptionCipher(SecretKey secretKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+
+	public static Cipher createEncryptionCipher(String password,
+												VaultDocumentVersion vaultDocumentVersion,
+												byte[] salt, byte[] iv)
+			throws UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException,
+			InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException {
+		Cipher cipher;
+
+		if (vaultDocumentVersion.compareTo(VaultDocumentVersion.VERSION_1_3) == 0) {
+			final SecretKey secretKey = createSecretKeyVaultDocumentVersion_1_3(password, salt);
+
+			cipher = Cipher.getInstance(DocumentVersion1_3Constants.CIPHER_ALGORITHM);
+
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
+		} else {
+			cipher = createEncryptionCipher(createSecretKey(password));
+		}
+
+		return cipher;
+	}
+
+	public static Cipher createDecryptionCipher(String password, VaultDocumentVersion vaultDocumentVersion,
+												byte[] salt, byte[] iv) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException, UnsupportedEncodingException {
 		long startTime = System.currentTimeMillis();
 
-		Cipher cipher = Cipher.getInstance(cipherAlgorithm);
+		Cipher cipher;
 
-		cipher.init(Cipher.DECRYPT_MODE, secretKey);
-		
+		if (vaultDocumentVersion.compareTo(VaultDocumentVersion.VERSION_1_3) == 0) {
+			final SecretKey secretKey = createSecretKeyVaultDocumentVersion_1_3(password, salt);
+
+			cipher = Cipher.getInstance(DocumentVersion1_3Constants.CIPHER_ALGORITHM);
+
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+		} else {
+			cipher = Cipher.getInstance(cipherAlgorithm);
+
+			cipher.init(Cipher.DECRYPT_MODE, createSecretKey(password));
+		}
+
 		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("CryptoUtils.createDecryptionCipher: %d ms", elapsedMilliseconds));
 
 		return cipher;
 	}
-	
+
 	public static String encryptString(Cipher cipher, String plainText) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		long startTime = System.currentTimeMillis();
 
 		// Silently convert null strings to empty strings.
 		if (plainText == null) {
-			plainText = "";
+			plainText = StringLiterals.EmptyString;
 		}
 		
 		byte[] plainTextBytes = plainText.getBytes("UTF-8");

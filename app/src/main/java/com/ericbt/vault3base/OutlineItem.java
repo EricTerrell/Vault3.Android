@@ -47,7 +47,7 @@ public class OutlineItem {
 
 	@Override
 	public String toString() {
-		return title != null ? title : "";
+		return title != null ? title : StringLiterals.EmptyString;
 	}
 
 	public void setTitle(String title) {
@@ -57,7 +57,7 @@ public class OutlineItem {
 	private String text;
 
 	public String getText() {
-		return text != null ? text : "";
+		return text != null ? text : StringLiterals.EmptyString;
 	}
 
 	public void setText(String text) {
@@ -85,8 +85,8 @@ public class OutlineItem {
 	}
 
 	/**
-	 * Return the most recently used font for this platform that is actually available on this platform. 
-	 * If no such font exists, return the default font.
+	 * Return the most recently used font for this platform that is actually available on this
+	 * platform. If no such font exists, return the default font.
 	 * @return font to use to render this outline item.
 	 */
 	public AndroidFont getFont() {
@@ -110,7 +110,8 @@ public class OutlineItem {
 	public RGBColor getColor() {
 		RGBColor color = this.color;
 		
-		if (color != null && color.isDefaulted() && VaultPreferenceActivity.useDefaultTextFontAndColor()) {
+		if (color != null && color.isDefaulted() &&
+				VaultPreferenceActivity.useDefaultTextFontAndColor()) {
 			final RGBColor newColor = VaultPreferenceActivity.getDefaultTextFontColor();
 			
 			if (newColor != null) {

@@ -4,6 +4,7 @@
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
 	android:background="?android:attr/colorBackground"
+	style="@style/Activity"
 	>
 	<LinearLayout 
 	    android:orientation="horizontal"
@@ -43,7 +44,7 @@
 		>
 		<Button
 			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
+			android:layout_height="match_parent"
 			android:text="Browse"
 			android:id="@+id/Browse"
 			android:enabled="true"
@@ -51,7 +52,7 @@
 		</Button>
 		<Button
 			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
+			android:layout_height="match_parent"
 			android:text="New"
 			android:id="@+id/New"
 			android:enabled="false"
@@ -59,7 +60,7 @@
 		</Button>
 		<Button
 			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
+			android:layout_height="match_parent"
 			android:text="Password"
 			android:enabled="false"
 			android:id="@+id/Password"
@@ -67,7 +68,7 @@
 		</Button>
 		<Button
 			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
+			android:layout_height="match_parent"
 			android:text="Refresh"
 			android:id="@+id/Refresh"
 			android:enabled="false"

@@ -31,7 +31,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.ContextMenu;
@@ -47,28 +47,17 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.ericbt.vault3base.async_tasks.add_item.AddItemTask;
-import com.ericbt.vault3base.async_tasks.add_item.AddItemTaskParameters;
-import com.ericbt.vault3base.async_tasks.delete_all_temp_files.DeleteAllTempFilesTask;
-import com.ericbt.vault3base.async_tasks.delete_all_temp_files.DeleteAllTempFilesTaskParameters;
-import com.ericbt.vault3base.async_tasks.indent_item.IndentItemTask;
-import com.ericbt.vault3base.async_tasks.indent_item.IndentItemTaskParameters;
-import com.ericbt.vault3base.async_tasks.move_item_down.MoveItemDownTask;
-import com.ericbt.vault3base.async_tasks.move_item_down.MoveItemDownTaskParameters;
-import com.ericbt.vault3base.async_tasks.move_item.MoveItemTask;
-import com.ericbt.vault3base.async_tasks.move_item.MoveItemTaskParameters;
-import com.ericbt.vault3base.async_tasks.move_item_up.MoveItemUpTask;
-import com.ericbt.vault3base.async_tasks.move_item_up.MoveItemUpTaskParameters;
-import com.ericbt.vault3base.async_tasks.remove_item_and_children.RemoveItemAndChildrenTask;
-import com.ericbt.vault3base.async_tasks.remove_item_and_children.RemoveItemAndChildrenTaskParameters;
-import com.ericbt.vault3base.async_tasks.save_changes.SaveChangesTask;
-import com.ericbt.vault3base.async_tasks.save_changes.SaveChangesTaskParameters;
-import com.ericbt.vault3base.async_tasks.sort.SortTask;
-import com.ericbt.vault3base.async_tasks.sort.SortTaskParameters;
-import com.ericbt.vault3base.async_tasks.unindent_item.UnindentItemTask;
-import com.ericbt.vault3base.async_tasks.unindent_item.UnindentItemTaskParameters;
-import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTask;
-import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTaskParameters;
+import com.ericbt.vault3base.async.workers.AddItem;
+import com.ericbt.vault3base.async.workers.DeleteAllTempFiles;
+import com.ericbt.vault3base.async.workers.IndentItem;
+import com.ericbt.vault3base.async.workers.MoveItem;
+import com.ericbt.vault3base.async.workers.MoveItemDown;
+import com.ericbt.vault3base.async.workers.MoveItemUp;
+import com.ericbt.vault3base.async.workers.RemoveItemAndChildren;
+import com.ericbt.vault3base.async.workers.SaveChanges;
+import com.ericbt.vault3base.async.workers.Sort;
+import com.ericbt.vault3base.async.workers.UnIndentItem;
+import com.ericbt.vault3base.async.workers.UpdateNavigateListItem;
 
 import java.io.File;
 
@@ -100,6 +89,7 @@ public class Vault3 extends AsyncTaskActivity {
 	private static final int SEARCH = 7;
 	public static final int TEXT = 8;
 	public static final int SETTINGS = 9;
+	public static final int PASSWORD_PROMPT_BEFORE_UPGRADE = 10;
 
 	private DocumentAction documentAction;
 
@@ -107,7 +97,7 @@ public class Vault3 extends AsyncTaskActivity {
     public void onCreate(Bundle savedInstanceState) {
         Log.i(StringLiterals.LogTag, getPackageName());
 
-		if (getIntent().getBooleanExtra("EXIT", false)) {
+		if (getIntent().getBooleanExtra(StringLiterals.Exit, false)) {
 	         finish();
 	         
 	         ExitApplication.exit();
@@ -150,13 +140,9 @@ public class Vault3 extends AsyncTaskActivity {
 				final String currentFileName =
 		new File(Globals.getApplication().getVaultDocument().getDatabase().getPath()).getName();
 
-				final SaveChangesTaskParameters saveChangesTaskParameters =
-						new SaveChangesTaskParameters(
-								currentFileName,
-								VaultPreferenceActivity.getSelectedFileUri(),
-								this);
-
-				new SaveChangesTask().execute(saveChangesTaskParameters);
+				new SaveChanges().saveChanges(currentFileName,
+						VaultPreferenceActivity.getSelectedFileUri(),
+						this);
 			});
 
 			parentTextView = findViewById(R.id.tvParent);
@@ -369,7 +355,7 @@ public class Vault3 extends AsyncTaskActivity {
 
 			enable(false);
 
-			new DeleteAllTempFilesTask().execute(new DeleteAllTempFilesTaskParameters(this));
+			new DeleteAllTempFiles().deleteAllTempFiles(this);
 		}
 	}
 
@@ -444,7 +430,7 @@ public class Vault3 extends AsyncTaskActivity {
 			result = true;
 		} else if (item.getItemId() == R.id.SortMenuItem) {
 			setEnabled(false);
-			new SortTask().execute(new SortTaskParameters(getParentOutlineItem(), this));
+			new Sort().sort(getParentOutlineItem(), this);
         } else if (item.getItemId() == R.id.HelpMenuItem) {
             final String url = getString(R.string.online_help_url);
             final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -481,20 +467,34 @@ public class Vault3 extends AsyncTaskActivity {
 		
 		try {
 			// If we have a document open, and it's the right one, use it.
-			if (Globals.getApplication().getVaultDocument() != null && Globals.getApplication().getVaultDocument().getDatabase().getPath().equals(dbFilePath)) {
+			if (Globals.getApplication().getVaultDocument() != null &&
+					Globals.getApplication().getVaultDocument().getDatabase().getPath()
+							.equals(dbFilePath)) {
 				displayVaultDocument(selectedOutlineItemID);
 			}
 			else {
-				// Otherwise, create a new one.
-				SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(dbFilePath, null);
+				// Otherwise, open create a new one.
+				final SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(
+						dbFilePath, null);
 				final VaultDocument vaultDocument = new VaultDocument(database);
 					
 				VaultDocument.verifyVaultDocumentVersion(vaultDocument.getDocumentVersion());
-					
-				if (vaultDocument.getDocumentVersion().compareTo(VaultDocumentVersion.getLatestVaultDocumentVersion()) < 0) {
+
+				// If document's version is not the most recent, force an upgrade.
+				if (vaultDocument.getDocumentVersion()
+						.compareTo(VaultDocumentVersion.getLatestVaultDocumentVersion()) < 0) {
 					vaultDocument.close();
-					
-					upgradeVaultDocument(dbFilePath);
+
+					if (!vaultDocument.isEncrypted) {
+						upgradeVaultDocument(dbFilePath);
+					} else {
+						final Intent intent =
+								new Intent(Vault3.this, PasswordPromptActivity.class);
+						intent.putExtra(StringLiterals.DBPath, database.getPath());
+
+						startActivityForResult(intent, PASSWORD_PROMPT_BEFORE_UPGRADE);
+					}
+
 					return;
 				}
 					
@@ -570,31 +570,36 @@ public class Vault3 extends AsyncTaskActivity {
 		alertDialogBuilder.create().show();
 	}
 
-	private void upgradeVaultDocument(String dbFilePath) {
+	private void upgradeVaultDocument(String dbFilePath, String password) {
 		final Intent intent = new Intent(this, UpgradeVaultDocumentActivity.class);
 		intent.putExtra(StringLiterals.DBPath, dbFilePath);
+		intent.putExtra(StringLiterals.Password, password);
+
 		startActivityForResult(intent, UPGRADE_VAULT_DOCUMENT);
+	}
+
+	private void upgradeVaultDocument(String dbFilePath) {
+		upgradeVaultDocument(dbFilePath, null);
 	}
 
 	private void goToParent() {
 		if (Globals.getApplication().getVaultDocument() != null && Globals.getApplication().getVaultDocument().getDatabase() != null && navigateArrayAdapter.getOutlineItem() != null) {
 			setEnabled(false);
-			parentLayout.setBackgroundDrawable(getResources().getDrawable(android.R.drawable.list_selector_background));
+			parentLayout.setBackground(getResources().getDrawable(android.R.drawable.list_selector_background));
 			
 			final OutlineItem outlineItem = navigateArrayAdapter.getOutlineItem();
 			
-			final UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItem.getParentId(), this);
-			new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
+			new UpdateNavigateListItem().updateNavigateListItem(
+					outlineItem.getParentId(), this);
 		}
 	}
 	
 	private void goToRoot() {
 		if (Globals.getApplication().getVaultDocument() != null && Globals.getApplication().getVaultDocument().getDatabase() != null) {
 			setEnabled(false);
-			parentLayout.setBackgroundDrawable(getResources().getDrawable(android.R.drawable.list_selector_background));
+			parentLayout.setBackground(getResources().getDrawable(android.R.drawable.list_selector_background));
 			
-			final UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(1, this);
-			new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
+			new UpdateNavigateListItem().updateNavigateListItem(1, this);
 		}
 	}
 	
@@ -654,9 +659,7 @@ public class Vault3 extends AsyncTaskActivity {
 	public void update(int outlineItemID) {
 		enable(false);
 		
-		final UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItemID, this);
-
-		new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
+		new UpdateNavigateListItem().updateNavigateListItem(outlineItemID, this);
 	}
 
 	public void update() {
@@ -763,11 +766,11 @@ public class Vault3 extends AsyncTaskActivity {
 		} else if (item.getItemId() == R.id.IndentMenuItem) {
 			setEnabled(false);
 			
-			new IndentItemTask().execute(new IndentItemTaskParameters(childOutlineItem, this));
+			new IndentItem().indentItem(childOutlineItem, this);
 		} else if (item.getItemId() == R.id.UnIndentMenuItem) {
 			setEnabled(false);
 			
-			new UnindentItemTask().execute(new UnindentItemTaskParameters(childOutlineItem, this));
+			new UnIndentItem().unIndentItem(childOutlineItem, this);
 		} else if (item.getItemId() == R.id.MoveItemMenuItem) {
 			movingOutlineItem = childOutlineItem;
 		} else if (item.getItemId() == R.id.MoveItemHereMenuItem) {
@@ -779,11 +782,11 @@ public class Vault3 extends AsyncTaskActivity {
 		} else if (item.getItemId() == R.id.MoveUpMenuItem) {
 			setEnabled(false);
 			
-			new MoveItemUpTask().execute(new MoveItemUpTaskParameters(childOutlineItem, this));
+			new MoveItemUp().moveItemUp(childOutlineItem, this);
 		} else if (item.getItemId() == R.id.MoveDownMenuItem) {
 			setEnabled(false);
 			
-			new MoveItemDownTask().execute(new MoveItemDownTaskParameters(childOutlineItem, this));
+			new MoveItemDown().moveItemDown(childOutlineItem, this);
 		} else {
 			result = super.onContextItemSelected(item);
 		}
@@ -935,12 +938,12 @@ public class Vault3 extends AsyncTaskActivity {
 					selectedOutlineItem.setSortOrder(data.getExtras().getInt(StringLiterals.SelectedOutlineItemSortOrder, 0));
 					selectedOutlineItem.setParentId(data.getExtras().getInt(StringLiterals.SelectedOutlineItemParentId, 1));
 
-					final AddItemTaskParameters addItemTaskParameters = new AddItemTaskParameters(newOutlineItem,
+					new AddItem().addItem(
+							newOutlineItem,
 							selectedOutlineItem,
 							data.getExtras().getBoolean(StringLiterals.AddAbove),
 							data.getExtras().getBoolean(StringLiterals.DisplayHint),
 							this);
-					new AddItemTask().execute(addItemTaskParameters);
 				}
 			}
 			break;
@@ -951,6 +954,16 @@ public class Vault3 extends AsyncTaskActivity {
 					final String password = data.getExtras().getString(StringLiterals.Password);
 
 					documentAction = new DocumentAction(dbPath, DocumentAction.Action.Load, 1, password);
+				}
+			}
+			break;
+
+			case PASSWORD_PROMPT_BEFORE_UPGRADE: {
+				if (resultCode == RESULT_OK) {
+					final String dbPath = data.getExtras().getString(StringLiterals.DBPath);
+					final String password = data.getExtras().getString(StringLiterals.Password);
+
+					upgradeVaultDocument(dbPath, password);
 				}
 			}
 			break;
@@ -968,8 +981,8 @@ public class Vault3 extends AsyncTaskActivity {
 
 					setEnabled(false);
 
-					MoveItemTaskParameters moveItemTaskParameters = new MoveItemTaskParameters(movingOutlineItem, selectedOutlineItem, data.getExtras().getBoolean(StringLiterals.Above), this);
-					new MoveItemTask().execute(moveItemTaskParameters);
+					new MoveItem().moveItem(movingOutlineItem, selectedOutlineItem,
+							data.getExtras().getBoolean(StringLiterals.Above), this);
 				}
 			}
 			break;
@@ -982,7 +995,7 @@ public class Vault3 extends AsyncTaskActivity {
 					outlineItem.setId(data.getExtras().getInt(StringLiterals.SelectedOutlineItemId));
 					outlineItem.setParentId(data.getExtras().getInt(StringLiterals.SelectedOutlineItemParentId));
 
-					new RemoveItemAndChildrenTask().execute(new RemoveItemAndChildrenTaskParameters(outlineItem, this));
+					new RemoveItemAndChildren().removeItemAndChildren(outlineItem, this);
 				}
 			}
 			break;

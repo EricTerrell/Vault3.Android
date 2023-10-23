@@ -30,8 +30,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTask;
-import com.ericbt.vault3base.async_tasks.update_navigate_list_item.UpdateNavigateListItemTaskParameters;
+import com.ericbt.vault3base.async.workers.UpdateNavigateListItem;
 
 public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 	private OutlineItem outlineItem;
@@ -81,7 +80,7 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
         	convertView = infalInflater.inflate(R.layout.navigate_item, parent, false);
         }
 
-    	TextView textView = convertView.findViewById(R.id.Title);
+    	final TextView textView = convertView.findViewById(R.id.Title);
     	textView.setText(outlineItem.getTitle());
     	
     	if (!enabled) {
@@ -96,7 +95,10 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
     	imageView.setEnabled(enabled);
     	imageView.setVisibility(outlineItem.getHasChildren() ? View.VISIBLE : View.INVISIBLE);
 
-		convertView.setBackgroundColor(outlineItem.isSelected() ? Color.BLUE : Color.BLACK);
+		// Item is selected if user is on a tablet in landscape orientation, and the item has been
+		// clicked on previously.
+		convertView.setBackgroundColor(
+				outlineItem.isSelected() ? Color.BLUE : convertView.getSolidColor());
 
     	textView.setOnClickListener(v -> {
 			if (isActivityEnabled()) {
@@ -111,7 +113,7 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 					TextActivity.addTextData(outlineItem, vault3.getTextFragment().getActivity().getIntent(), false);
 					vault3.getTextFragment().update(true, outlineItem);
 				} else {
-					Intent intent = new Intent(getContext(), TextActivity.class);
+					final Intent intent = new Intent(getContext(), TextActivity.class);
 					TextActivity.addTextData(outlineItem, intent, false);
 					vault3.startActivityForResult(intent, Vault3.TEXT);
 				}
@@ -128,8 +130,8 @@ public class NavigateArrayAdapter extends ArrayAdapter<OutlineItem> {
 
 				((Vault3) getContext()).enable(false);
 
-				UpdateNavigateListItemTaskParameters updateNavigateListItemTaskParameters = new UpdateNavigateListItemTaskParameters(outlineItem.getId(), ((Vault3) getContext()));
-				new UpdateNavigateListItemTask().execute(updateNavigateListItemTaskParameters);
+				new UpdateNavigateListItem().updateNavigateListItem(
+						outlineItem.getId(), ((Vault3) getContext()));
 			}
 		});
 

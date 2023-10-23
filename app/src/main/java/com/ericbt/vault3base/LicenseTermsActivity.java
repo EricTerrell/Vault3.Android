@@ -51,7 +51,7 @@ public class LicenseTermsActivity extends Activity {
 		final RadioButton rejectLicenseTerms = findViewById(R.id.RejectLicenseTerms);
 		rejectLicenseTerms.setChecked(!VaultPreferenceActivity.getUserAcceptedTerms());
 
-		Button okButton = findViewById(R.id.OKButton);
+		final Button okButton = findViewById(R.id.OKButton);
 
 		okButton.setOnClickListener(v -> {
 			final boolean userAcceptedTerms = acceptLicenseTerms.isChecked();
@@ -67,9 +67,9 @@ public class LicenseTermsActivity extends Activity {
 
 							finish();
 
-							Intent intent = new Intent(getApplicationContext(), Vault3.class);
+							final Intent intent = new Intent(getApplicationContext(), Vault3.class);
 							intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-							intent.putExtra("EXIT", true);
+							intent.putExtra(StringLiterals.Exit, true);
 							startActivity(intent);
 						})
 						.setCancelable(false)

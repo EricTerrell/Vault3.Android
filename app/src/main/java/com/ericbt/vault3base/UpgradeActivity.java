@@ -38,27 +38,27 @@ public class UpgradeActivity extends Activity {
         
 		setTitle(String.format("%s: Upgrade %s", StringLiterals.ProgramName, StringLiterals.ProgramName));
 		
-        boolean isFreeVersion = Globals.isFreeVersion();
+        final boolean isFreeVersion = Globals.isFreeVersion();
         
-        Button upgrade = findViewById(R.id.Upgrade);
+        final Button upgrade = findViewById(R.id.Upgrade);
         upgrade.setEnabled(isFreeVersion);
         upgrade.setVisibility(isFreeVersion ? View.VISIBLE : View.INVISIBLE);
         
     	upgrade.setOnClickListener(v -> {
 			try {
-				String appStore = getResources().getString(R.string.app_store);
+				final String appStore = getResources().getString(R.string.app_store);
 
 				if (!appStore.equals("BN")) {
-					String paidVersionURL = getResources().getString(R.string.paid_version_url);
+					final String paidVersionURL = getResources().getString(R.string.paid_version_url);
 					Log.i(StringLiterals.LogTag, String.format("UpgradeDialog.show: paidVersionURL: %s", paidVersionURL));
 
-					Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(paidVersionURL));
+					final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(paidVersionURL));
 					startActivity(intent);
 				}
 				else {
-					String ean = getResources().getString(R.string.bn_EAN);
+					final String ean = getResources().getString(R.string.bn_EAN);
 
-					Intent intent = new Intent();
+					final Intent intent = new Intent();
 					intent.setAction("com.bn.sdk.shop.details");
 					intent.putExtra("product_details_ean", ean);
 					startActivity(intent);
@@ -69,7 +69,7 @@ public class UpgradeActivity extends Activity {
 			}
 		});
 		
-    	Button cancelButton = findViewById(R.id.CancelButton);
+    	final Button cancelButton = findViewById(R.id.CancelButton);
     	
     	cancelButton.setOnClickListener(v -> finish());
 	}

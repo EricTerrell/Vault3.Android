@@ -64,4 +64,5 @@ public class StringLiterals {
 	public static final String DocumentUri                  = "DocumentUri";
 	public static final String EmptyString                  = "";
 	public static final String JournalSuffix                = "-journal";
+	public static final String Exit							= "EXIT";
 }

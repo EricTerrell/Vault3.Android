@@ -33,15 +33,14 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.ericbt.vault3base.async_tasks.search.SearchTask;
-import com.ericbt.vault3base.async_tasks.search.SearchTaskParameters;
+import com.ericbt.vault3base.async.workers.Search;
 
 public class SearchActivity extends AsyncTaskActivity {
 	private SearchResultsArrayAdapter searchResultsAdapter;
 	private Button cancelButton, searchButton, searchOptions;
 	private EditText searchText;
-	private SearchTask searchTask;
-    private Search search;
+	private Search search;
+    private SearchParameters searchParameters;
 	private TextView searchHitsText;
 	private boolean redoSearchOnResume = false;
 	
@@ -83,12 +82,12 @@ public class SearchActivity extends AsyncTaskActivity {
 startActivity(intent);
 		});
 		
-		search = new Search();
+		searchParameters = new SearchParameters();
 		searchText = findViewById(R.id.SearchText);
 		
 		searchText.setText(VaultPreferenceActivity.getSearchText());
 		
-		search.setSearchText(searchText.getEditableText().toString());
+		searchParameters.setSearchText(searchText.getEditableText().toString());
 		
 		searchText.addTextChangedListener(new TextWatcher() {
 			@Override
@@ -125,9 +124,9 @@ startActivity(intent);
 		cancelButton.setOnClickListener(v -> {
 			redoSearchOnResume = false;
 
-			if (searchTask != null) {
-				searchTask.cancel(true);
-				searchTask = null;
+			if (search != null) {
+				search.cancel();
+				search = null;
 			}
 		});
 
@@ -160,34 +159,35 @@ startActivity(intent);
 			
 			searchResultsAdapter.clear();
 			
-			search.setMatchCase(VaultPreferenceActivity.getSearchMatchCase());
-			search.setMatchWholeWord(VaultPreferenceActivity.getSearchMatchWholeWords());
-			search.setSearchFields(VaultPreferenceActivity.getSearchFields());
-			search.setSearchScope(VaultPreferenceActivity.getSearchScope());
-			search.setSearchScopeID(getIntent().getExtras().getInt(StringLiterals.SelectedOutlineItemId));
-			search.setMustFind(VaultPreferenceActivity.getSearchMustFind());
+			searchParameters.setMatchCase(VaultPreferenceActivity.getSearchMatchCase());
+			searchParameters.setMatchWholeWord(VaultPreferenceActivity.getSearchMatchWholeWords());
+			searchParameters.setSearchFields(VaultPreferenceActivity.getSearchFields());
+			searchParameters.setSearchScope(VaultPreferenceActivity.getSearchScope());
+			searchParameters.setSearchScopeID(getIntent().getExtras().getInt(StringLiterals.SelectedOutlineItemId));
+			searchParameters.setMustFind(VaultPreferenceActivity.getSearchMustFind());
 			
-			search.prepareToSearch();
+			searchParameters.prepareToSearch();
 			
 			VaultPreferenceActivity.setSearchText(searchText.getEditableText().toString());
 	
 			setEnabled(false);
 			
-			searchTask = new SearchTask();
-			searchTask.execute(new SearchTaskParameters(SearchActivity.this, search));
+			search = new Search();
+			search.search(this, searchParameters);
 		}
 	}
 
 	private void enableSearchButton(boolean enable) {
-		String text = searchText.getEditableText().toString().trim();
+		final String text = searchText.getEditableText().toString().trim();
 		
-		search.setSearchText(text);
+		searchParameters.setSearchText(text);
 		
-		searchButton.setEnabled(enable && Globals.getApplication().getVaultDocument() != null && text.length() > 0);
+		searchButton.setEnabled(
+				enable && Globals.getApplication().getVaultDocument() != null && !text.isEmpty());
 	}
 	
 	public void searchCompleted() {
-		searchTask = null;
+		search = null;
 		setEnabled(true);
 	}
 	
@@ -198,8 +198,8 @@ startActivity(intent);
 			searchHitsText.setVisibility(View.VISIBLE);
 		}
 		
-		int hits = searchResultsAdapter.getCount();
-		int maxHits = VaultPreferenceActivity.getMaxSearchHits();
+		final int hits = searchResultsAdapter.getCount();
+		final int maxHits = VaultPreferenceActivity.getMaxSearchHits();
 		
 		searchHitsText.setText(String.format("Hits: %d Max: %d", hits, maxHits));
 	}
@@ -221,11 +221,11 @@ startActivity(intent);
 	}
 	
 	public void goToList(int outlineItemParentId) {
-		Intent returnData = new Intent();
+		final Intent returnData = new Intent();
 		returnData.putExtra(StringLiterals.SelectedOutlineItemParentId, outlineItemParentId);
 
-		if (searchTask != null) {
-			searchTask.cancel(true);
+		if (search != null) {
+			search.cancel();
 		}
 
 		setResult(RESULT_OK, returnData);

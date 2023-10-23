@@ -22,9 +22,11 @@ package com.ericbt.vault3base;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +35,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -42,9 +43,10 @@ import android.graphics.Color;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 
-import com.ericbt.vault3base.Search.SearchFields;
-import com.ericbt.vault3base.Search.SearchScope;
-import com.ericbt.vault3base.async_tasks.search.SearchTask;
+import com.ericbt.vault3base.SearchParameters.SearchFields;
+import com.ericbt.vault3base.SearchParameters.SearchScope;
+import com.ericbt.vault3base.async.workers.Search;
+import com.ericbt.vault3base.async.IReportProgress;
 
 import commonCode.Base64Coder;
 import commonCode.VaultDocumentVersion;
@@ -57,46 +59,64 @@ public class VaultDocument {
 	private static final String ENCRYPTED = "Encrypted";
 
 	private static final String CIPHERTEXT_COLUMN_NAME = "Ciphertext";
-	
+	private static final String CIPHERTEXT_SALT_COLUMN_NAME = "salt";
+	private static final String CIPHERTEXT_IV_COLUMN_NAME = "iv";
+
+	private static final String DOCUMENT_VERSION = "DocumentVersion";
+
 	private SQLiteDatabase database;
 	
 	public SQLiteDatabase getDatabase() {
 		return database;
 	}
 
-	private final VaultDocumentVersion documentVersion;
+	private VaultDocumentVersion documentVersion;
 	
 	public VaultDocumentVersion getDocumentVersion() {
 		return documentVersion;
 	}
 
+	public void setDocumentVersion(VaultDocumentVersion documentVersion) {
+		this.documentVersion = documentVersion;
+	}
+
 	private String password;
-	
+
 	public boolean setPassword(String password) {
 		boolean setPassword = false;
-		
+
 		if (isEncrypted) {
 			try {
 				if (password != null) {
-					secretKey = CryptoUtils.createSecretKey(password);
-					
-					Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(secretKey);
-					
-					CryptoUtils.decryptString(decryptionCipher, cipherText);
-					
+					final String cipherText = getVaultDocumentInfo(CIPHERTEXT_COLUMN_NAME);
+
+					if (getDocumentVersion().compareTo(VaultDocumentVersion.VERSION_1_3) == 0) {
+						final byte[] salt = Base64Coder.decode(getVaultDocumentInfo(CIPHERTEXT_SALT_COLUMN_NAME));
+						final byte[] iv = Base64Coder.decode(getVaultDocumentInfo(CIPHERTEXT_IV_COLUMN_NAME));
+
+						final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(password,
+								getDocumentVersion(), salt, iv);
+
+						CryptoUtils.decryptString(decryptionCipher, cipherText);
+					} else if (getDocumentVersion().compareTo(VaultDocumentVersion.VERSION_1_3) < 0) {
+						final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(password,
+								getDocumentVersion(), null, null);
+
+						CryptoUtils.decryptString(decryptionCipher, cipherText);
+					}
+
 					this.password = password;
-					
+
 					setPassword = true;
 				}
 				else {
-					secretKey = null;
 					this.password = null;
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		
+
 		return setPassword;
 	}
 
@@ -106,16 +126,12 @@ public class VaultDocument {
 
 	public void setDirty(boolean dirty) { this.dirty = dirty; }
 
-	private SecretKey secretKey;
-	
 	boolean isEncrypted;
 	
 	public boolean isEncrypted() {
 		return isEncrypted;
 	}
 
-	private String cipherText;
-	
 	/**
 	 * Retrieves the specified outline item
 	 * @param id outline item id
@@ -131,54 +147,68 @@ public class VaultDocument {
 	 */
 	public OutlineItem getOutlineItem(int id, boolean retrieveChildren) throws InvalidKeyException,
 			NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
-			BadPaddingException, UnsupportedEncodingException, VaultException {
-		long startTime = System.currentTimeMillis();
+			BadPaddingException, UnsupportedEncodingException, VaultException,
+			InvalidAlgorithmParameterException, InvalidKeySpecException {
+		final long startTime = System.currentTimeMillis();
 
-		Cipher decryptionCipher = null;
-		
-		if (isEncrypted) {
-			decryptionCipher = CryptoUtils.createDecryptionCipher(secretKey);
-		}
-
-		OutlineItem outlineItem = new OutlineItem();
+		final OutlineItem outlineItem = new OutlineItem();
 		outlineItem.setId(id);
 
-		Cursor cursor = null;
-		
-		try {
-			String[] columns = new String[] { /* 0 */ TableAndColumnNames.OutlineItem.ID, 
-											  /* 1 */ TableAndColumnNames.OutlineItem.ParentID, 
-											  /* 2 */ TableAndColumnNames.OutlineItem.Title, 
-											  /* 3 */ TableAndColumnNames.OutlineItem.Text, 
-											  /* 4 */ TableAndColumnNames.OutlineItem.SortOrder,
-											  /* 5 */ TableAndColumnNames.OutlineItem.FontList,
-											  /* 6 */ TableAndColumnNames.OutlineItem.Red,
-											  /* 7 */ TableAndColumnNames.OutlineItem.Green,
-											  /* 8 */ TableAndColumnNames.OutlineItem.Blue,
-											};
-			cursor = database.query(TableAndColumnNames.OutlineItem.TableName, 
-									columns, 
-									String.format("%s = ?", TableAndColumnNames.OutlineItem.ID), 
-									new String[] { String.valueOf(id) }, null, null, null);
-			
+		String[] columns = new String[] { /*  0 */ TableAndColumnNames.OutlineItem.ID,
+				/*  1 */ TableAndColumnNames.OutlineItem.ParentID,
+				/*  2 */ TableAndColumnNames.OutlineItem.Title,
+				/*  3 */ TableAndColumnNames.OutlineItem.Text,
+				/*  4 */ TableAndColumnNames.OutlineItem.SortOrder,
+				/*  5 */ TableAndColumnNames.OutlineItem.FontList,
+				/*  6 */ TableAndColumnNames.OutlineItem.Red,
+				/*  7 */ TableAndColumnNames.OutlineItem.Green,
+				/*  8 */ TableAndColumnNames.OutlineItem.Blue,
+				/*  9 */ TableAndColumnNames.OutlineItem.TitleSalt,
+				/* 10 */ TableAndColumnNames.OutlineItem.TitleIV,
+				/* 11 */ TableAndColumnNames.OutlineItem.TextSalt,
+				/* 12 */ TableAndColumnNames.OutlineItem.TextIV
+		};
+
+		try (final Cursor cursor = database.query(
+				TableAndColumnNames.OutlineItem.TableName,
+				columns,
+				String.format("%s = ?", TableAndColumnNames.OutlineItem.ID),
+				new String[] { String.valueOf(id) }, null, null, null)) {
 			if (cursor.moveToFirst()) {
 				int parentID = cursor.getInt(1);
 				
 				String title = cursor.getString(2);
 				String text = cursor.getString(3);
-				
+
 				if (isEncrypted) {
-					title = CryptoUtils.decryptString(decryptionCipher, title);
-					text = CryptoUtils.decryptString(decryptionCipher, text);
+					{
+						final byte[] salt = Base64Coder.decode(cursor.getString(9));
+						final byte[] iv = Base64Coder.decode(cursor.getString(10));
+
+						final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+								password, getDocumentVersion(), salt, iv);
+
+						title = CryptoUtils.decryptString(decryptionCipher, title);
+					}
+
+					{
+						final byte[] salt = Base64Coder.decode(cursor.getString(11));
+						final byte[] iv = Base64Coder.decode(cursor.getString(12));
+
+						final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+								password, getDocumentVersion(), salt, iv);
+
+						text = CryptoUtils.decryptString(decryptionCipher, text);
+					}
 				}
 				
 				if (id == 1) {
 					title = new File(database.getPath()).getName();
 				}
 	
-				int sortOrder = cursor.getInt(4);
-				
-				String fontListString = cursor.getString(5);
+				final int sortOrder = cursor.getInt(4);
+
+				final String fontListString = cursor.getString(5);
 				
 				if (fontListString != null && fontListString.length() > 0) {
 					FontList fontList = FontList.deserialize(fontListString);
@@ -186,7 +216,7 @@ public class VaultDocument {
 					outlineItem.setFontList(fontList);
 				}
 				
-				RGBColor rgbColor = new RGBColor(cursor.getInt(6), cursor.getInt(7), cursor.getInt(8));
+				final RGBColor rgbColor = new RGBColor(cursor.getInt(6), cursor.getInt(7), cursor.getInt(8));
 				outlineItem.setColor(rgbColor);
 				
 				outlineItem.setTitle(title);
@@ -195,36 +225,46 @@ public class VaultDocument {
 				outlineItem.setParentId(parentID);
 			}
 			else {
-				String errorMessage = String.format("VaultDocument.getOutlineItem: cannot retrieve item %d from %s", id, database.getPath());
+				final String errorMessage = String.format("VaultDocument.getOutlineItem: cannot retrieve item %d from %s", id, database.getPath());
 				
 				Log.e(StringLiterals.LogTag, errorMessage);
 				
 				throw new VaultException(errorMessage);
 			}
 		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
-				
-		cursor = null;
 
 		if (retrieveChildren) {
-			try {
-				String queryString = "SELECT ID, ParentID, Title, Text, SortOrder, EXISTS(SELECT ID FROM OutlineItem OI2 WHERE OI2.ParentID = OI1.id LIMIT 1), FontList, Red, Green, Blue FROM OutlineItem OI1 WHERE ParentID = ? ORDER BY SortOrder";
-				cursor = database.rawQuery(queryString, new String[]{String.valueOf(id)});
+			final String queryString = "SELECT ID, ParentID, Title, Text, SortOrder, EXISTS(SELECT ID FROM OutlineItem OI2 WHERE OI2.ParentID = OI1.id LIMIT 1), FontList, Red, Green, Blue, TitleSalt, TitleIV, TextSalt, TextIV FROM OutlineItem OI1 WHERE ParentID = ? ORDER BY SortOrder";
 
+			try (final Cursor cursor = database.rawQuery(
+					queryString, new String[]{String.valueOf(id)});) {
 				while (cursor.moveToNext()) {
-					int itemId = cursor.getInt(0);
-					int parentID = cursor.getInt(1);
+					final int itemId = cursor.getInt(0);
+					final int parentID = cursor.getInt(1);
 
 					String title = cursor.getString(2);
 					String text = cursor.getString(3);
 
 					if (isEncrypted) {
-						title = CryptoUtils.decryptString(decryptionCipher, title);
-						text = CryptoUtils.decryptString(decryptionCipher, text);
+						{
+							final byte[] salt = Base64Coder.decode(cursor.getString(10));
+							final byte[] iv = Base64Coder.decode(cursor.getString(11));
+
+							final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+									password, getDocumentVersion(), salt, iv);
+
+							title = CryptoUtils.decryptString(decryptionCipher, title);
+						}
+
+						{
+							final byte[] salt = Base64Coder.decode(cursor.getString(12));
+							final byte[] iv = Base64Coder.decode(cursor.getString(13));
+
+							final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+									password, getDocumentVersion(), salt, iv);
+
+							text = CryptoUtils.decryptString(decryptionCipher, text);
+						}
 					}
 
 					int sortOrder = cursor.getInt(4);
@@ -239,7 +279,7 @@ public class VaultDocument {
 					childOutlineItem.setText(text);
 					childOutlineItem.setHasChildren(hasChildren);
 
-					String fontListString = cursor.getString(6);
+					final String fontListString = cursor.getString(6);
 
 					if (fontListString != null && fontListString.length() > 0) {
 						FontList fontList = FontList.deserialize(fontListString);
@@ -251,10 +291,6 @@ public class VaultDocument {
 					childOutlineItem.setColor(rgbColor);
 
 					outlineItem.addChild(childOutlineItem);
-				}
-			} finally {
-				if (cursor != null) {
-					cursor.close();
 				}
 			}
 
@@ -269,7 +305,7 @@ public class VaultDocument {
 
 	public OutlineItem getOutlineItem(int id) throws InvalidKeyException,
 			NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
-			BadPaddingException, UnsupportedEncodingException, VaultException {
+			BadPaddingException, UnsupportedEncodingException, VaultException, InvalidAlgorithmParameterException, InvalidKeySpecException {
 		return getOutlineItem(id, true);
 	}
 
@@ -279,17 +315,15 @@ public class VaultDocument {
 		String value = null;
 
 		final String[] columns = new String[] { TableAndColumnNames.VaultDocumentInfo.Value };
-		final String selection = String.format("%s = '%s'", TableAndColumnNames.VaultDocumentInfo.Name, name);
+		final String selection = String.format("%s = '%s'",
+				TableAndColumnNames.VaultDocumentInfo.Name, name);
 
 		try (final Cursor cursor =
 					 database.query(
 							 TableAndColumnNames.VaultDocumentInfo.TableName,
 							 columns,
 							 selection,
-							 null,
-							 null,
-							 null,
-							 null)) {
+							 null, null, null, null)) {
 
 			if (cursor.moveToFirst()) {
 				value = cursor.getString(0);
@@ -297,7 +331,8 @@ public class VaultDocument {
 		}
 
 		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.getVaultDocumentInfo: %d ms", elapsedMilliseconds));
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.getVaultDocumentInfo: %d ms",
+				elapsedMilliseconds));
 
 		return value;
 	}
@@ -305,15 +340,24 @@ public class VaultDocument {
 	private void setVaultDocumentInfo(String name, String value) throws VaultException {
 		long startTime = System.currentTimeMillis();
 
-		ContentValues columnValues = new ContentValues();
+		final String queryString = String.format("DELETE FROM %s WHERE %s = '%s'",
+				TableAndColumnNames.VaultDocumentInfo.TableName,
+				TableAndColumnNames.VaultDocumentInfo.Name,
+				name);
+
+		// Remove original row, if there is one.
+		database.execSQL(queryString);
+
+		final ContentValues columnValues = new ContentValues();
 		columnValues.put(TableAndColumnNames.VaultDocumentInfo.Name, name);
 		columnValues.put(TableAndColumnNames.VaultDocumentInfo.Value, value);
 
-		String whereClause = String.format("%s = ?", TableAndColumnNames.VaultDocumentInfo.Name);
+		final long id = database.insert(
+				TableAndColumnNames.VaultDocumentInfo.TableName,
+				null,
+				columnValues);
 
-		int rowsUpdated = database.update(TableAndColumnNames.VaultDocumentInfo.TableName, columnValues, whereClause, new String[] { name } );
-
-		if (rowsUpdated != 1) {
+		if (id == -1) {
 			String errorMessage = String.format("VaultDocument.setVaultDocumentInfo: cannot set %s to \"%s\"", name, value);
 			
 			Log.e(StringLiterals.LogTag, errorMessage);
@@ -324,7 +368,30 @@ public class VaultDocument {
 		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.setVaultDocumentInfo: %d ms", elapsedMilliseconds));
 	}
-	
+
+	private void updateVaultDocumentInfoEncryptionData() throws VaultException,
+			UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException,
+			InvalidAlgorithmParameterException, NoSuchPaddingException, NoSuchAlgorithmException,
+			InvalidKeySpecException, InvalidKeyException {
+		if (isEncrypted) {
+			final byte[] salt = CryptoUtils.createSalt();
+			final byte[] iv = CryptoUtils.createIV();
+
+			final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(
+					password, getDocumentVersion(), salt, iv);
+
+			final String cipherText = CryptoUtils.encryptString(encryptionCipher, getRandomPlainText());
+
+			setVaultDocumentInfo(CIPHERTEXT_COLUMN_NAME, cipherText);
+			setVaultDocumentInfo(CIPHERTEXT_SALT_COLUMN_NAME, new String(Base64Coder.encode(salt)));
+			setVaultDocumentInfo(CIPHERTEXT_IV_COLUMN_NAME, new String(Base64Coder.encode(iv)));
+		} else {
+			deleteVaultDocumentInfo(CIPHERTEXT_COLUMN_NAME);
+			deleteVaultDocumentInfo(CIPHERTEXT_SALT_COLUMN_NAME);
+			deleteVaultDocumentInfo(CIPHERTEXT_IV_COLUMN_NAME);
+		}
+	}
+
 	private void deleteVaultDocumentInfo(String name) {
 		long startTime = System.currentTimeMillis();
 
@@ -340,24 +407,22 @@ public class VaultDocument {
 	 * @return true if text is encrypted, false otherwise
 	 */
 	private boolean databaseIsEncrypted() {
-		String value = getVaultDocumentInfo(ENCRYPTED); 
+		final String value = getVaultDocumentInfo(ENCRYPTED);
 
 		return value.equals("1");
 	}
 
 	private List<Integer> getChildren(int id) {
-		Cursor cursor = null;
+		final ArrayList<Integer> childrenWithChildren = new ArrayList<>();
+		final ArrayList<Integer> childrenWithoutChildren = new ArrayList<>();
 
-		ArrayList<Integer> childrenWithChildren = new ArrayList<>();
-		ArrayList<Integer> childrenWithoutChildren = new ArrayList<>();
-		
-		try {
-			String queryString = "SELECT ID, EXISTS(SELECT ID FROM OutlineItem OI2 WHERE OI2.ParentID = OI1.id LIMIT 1) FROM OutlineItem OI1 WHERE ParentID = ?";
-			cursor = database.rawQuery(queryString, new String[] { String.valueOf(id) });
+		final String queryString = "SELECT ID, EXISTS(SELECT ID FROM OutlineItem OI2 WHERE OI2.ParentID = OI1.id LIMIT 1) FROM OutlineItem OI1 WHERE ParentID = ?";
 
+		try (final Cursor cursor = database.rawQuery(queryString,
+				new String[] { String.valueOf(id) })) {
 			while (cursor.moveToNext()) {
 				int childID = cursor.getInt(0);
-				boolean hasChildren = cursor.getInt(1) == 1;
+				final boolean hasChildren = cursor.getInt(1) == 1;
 				
 				if (hasChildren) {
 					childrenWithChildren.add(childID);
@@ -367,18 +432,13 @@ public class VaultDocument {
 				}
 			}
 		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
 
-		List<Integer> allChildren = new ArrayList<>();
+		final List<Integer> allChildren = new ArrayList<>();
 		allChildren.addAll(childrenWithChildren);
 		allChildren.addAll(childrenWithoutChildren);
 		
 		for (Integer childID : childrenWithChildren) {
-			List<Integer> recursiveChildren = getChildren(childID);
+			final List<Integer> recursiveChildren = getChildren(childID);
 			
 			allChildren.addAll(recursiveChildren);
 		}
@@ -389,7 +449,7 @@ public class VaultDocument {
 	public List<Integer> removeOutlineItem(int id) throws VaultException {
 		long startTime = System.currentTimeMillis();
 
-		List<Integer> outlineItemsRemoved = remove(id);
+		final List<Integer> outlineItemsRemoved = remove(id);
 		
 		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.removeOutlineItem: %d ms", elapsedMilliseconds));
@@ -403,9 +463,9 @@ public class VaultDocument {
 	 * @throws VaultException
 	 */
 	private List<Integer> remove(int id) throws VaultException {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
-		List<Integer> idsToDelete = getChildren(id);
+		final List<Integer> idsToDelete = getChildren(id);
 		
 		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.remove: %d ms to get child ids", elapsedMilliseconds));
@@ -416,7 +476,7 @@ public class VaultDocument {
 		
 		try {
 			for (int idToDelete : idsToDelete) {
-				int rowsDeleted = database.delete(TableAndColumnNames.OutlineItem.TableName, 
+				final int rowsDeleted = database.delete(TableAndColumnNames.OutlineItem.TableName,
 												  String.format("%s = ?", TableAndColumnNames.OutlineItem.ID), 
 												  new String[] { String.valueOf(idToDelete) });
 				
@@ -444,28 +504,21 @@ public class VaultDocument {
 	 * @return ID of item that will be the specified item's parent after indentation, or -1 if item cannot be indented.
 	 */
 	private int getIndentItemID(int parentID, int sortOrder) {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
 		int indentItemID = -1;
 
-		Cursor cursor = null;
+		final String queryString = String.format("SELECT ID FROM OutlineItem WHERE ParentID = %d AND SortOrder < %d ORDER BY SortOrder DESC LIMIT 1", parentID, sortOrder);
 		
-		try {
-			String queryString = String.format("SELECT ID FROM OutlineItem WHERE ParentID = %d AND SortOrder < %d ORDER BY SortOrder DESC LIMIT 1", parentID, sortOrder);
-			cursor = database.rawQuery(queryString, null);
-
+		try (final Cursor cursor = database.rawQuery(queryString, null)) {
 			if (cursor.moveToNext()) {
 				indentItemID = cursor.getInt(0);
 			}
 		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
-		
+
 		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.getIndentItemID: %d ms", elapsedMilliseconds));
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.getIndentItemID: %d ms",
+				elapsedMilliseconds));
 
 		return indentItemID;
 	}
@@ -532,20 +585,13 @@ public class VaultDocument {
 		long startTime = System.currentTimeMillis();
 
 		int maxSortOrder = -1;
-		
-		Cursor cursor = null;
-		
-		try {
-			String queryString = String.format("SELECT MAX(SortOrder) FROM OutlineItem WHERE ParentID = %d", parentID);
-			cursor = database.rawQuery(queryString, null);
 
+		final String queryString = String.format(
+				"SELECT MAX(SortOrder) FROM OutlineItem WHERE ParentID = %d", parentID);
+		
+		try (final Cursor cursor = database.rawQuery(queryString, null)) {
 			if (cursor.moveToNext()) {
 				maxSortOrder = cursor.getInt(0);
-			}
-		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
 			}
 		}
 
@@ -565,7 +611,7 @@ public class VaultDocument {
 
 		int parentID = -1;
 
-		try (Cursor cursor = database.query(TableAndColumnNames.OutlineItem.TableName,
+		try (final Cursor cursor = database.query(TableAndColumnNames.OutlineItem.TableName,
 				new String[]{TableAndColumnNames.OutlineItem.ParentID},
 				String.format("%s = ?", TableAndColumnNames.OutlineItem.ID),
 				new String[]{String.valueOf(id)}, null, null, null)) {
@@ -585,31 +631,33 @@ public class VaultDocument {
 		return outlineItem.getParentId() != 1;
 	}
 	
-	public int unIndent(OutlineItem outlineItem) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, VaultException {
-		long startTime = System.currentTimeMillis();
+	public int unIndent(OutlineItem outlineItem) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, VaultException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+		final long startTime = System.currentTimeMillis();
 
-		int newParentID = getParentID(outlineItem.getParentId());
+		final int newParentID = getParentID(outlineItem.getParentId());
 
-		OutlineItem parentOutlineItem = getOutlineItem(outlineItem.getParentId());
+		final OutlineItem parentOutlineItem = getOutlineItem(outlineItem.getParentId());
 		
 		database.beginTransaction();
-		
-		Cursor cursor = null;
 		
 		try {
 			createGapInSortOrder(newParentID, parentOutlineItem.getSortOrder());
 			
 			ContentValues contentValues = new ContentValues();
 			contentValues.put(TableAndColumnNames.OutlineItem.ParentID, newParentID);
-			contentValues.put(TableAndColumnNames.OutlineItem.SortOrder, parentOutlineItem.getSortOrder() + 1);
+			contentValues.put(TableAndColumnNames.OutlineItem.SortOrder,
+					parentOutlineItem.getSortOrder() + 1);
 
-			int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName, 
+			final int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName,
 											  contentValues, 
-											  String.format("%s = ?", TableAndColumnNames.OutlineItem.ID), 
+											  String.format("%s = ?",
+													  TableAndColumnNames.OutlineItem.ID),
 											  new String[] { String.valueOf(outlineItem.getId()) });
 			
 			if (rowsUpdated != 1) {
-				String errorMessage = String.format("VaultDocument.unIndent, could not unindent id: %d", outlineItem.getId());
+				final String errorMessage =
+						String.format("VaultDocument.unIndent, could not unindent id: %d",
+								outlineItem.getId());
 				Log.e(StringLiterals.LogTag, errorMessage);
 				throw new VaultException(errorMessage);
 			}
@@ -617,15 +665,12 @@ public class VaultDocument {
 			database.setTransactionSuccessful();
 		}
 		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-			
 			database.endTransaction();
 		}
 		
 		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.unIndent: %d ms", elapsedMilliseconds));
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.unIndent: %d ms",
+				elapsedMilliseconds));
 
 		return newParentID;
 	}
@@ -635,26 +680,23 @@ public class VaultDocument {
 
 		boolean canMoveUpOrDown = false;
 		
-		Cursor cursor = null;
-		
-		try {
+		final String queryString = String.format("SELECT EXISTS(SELECT * FROM OutlineItem WHERE ParentID = ? AND SortOrder %s ? LIMIT 1)", up ? "<" : ">");
+
+		try (final Cursor cursor = database.rawQuery(
+				queryString,
+				new String[] {
+						String.valueOf(outlineItem.getParentId()),
+						String.valueOf(outlineItem.getSortOrder()) })) {
 			// Item can move up if it has a sibling with lower sort order.
 			// Item can move down if it has a sibling with higher sort order.
-			String queryString = String.format("SELECT EXISTS(SELECT * FROM OutlineItem WHERE ParentID = ? AND SortOrder %s ? LIMIT 1)", up ? "<" : ">");
-			cursor = database.rawQuery(queryString, new String[] { String.valueOf(outlineItem.getParentId()), String.valueOf(outlineItem.getSortOrder()) });
-			
 			if (cursor.moveToNext()) {
 				canMoveUpOrDown = cursor.getInt(0) == 1;
 			}
 		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
 
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.canMoveUpOrDown: %d ms", elapsedMilliseconds));
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.canMoveUpOrDown: %d ms",
+				elapsedMilliseconds));
 
 		return canMoveUpOrDown;
 	}
@@ -664,17 +706,17 @@ public class VaultDocument {
 	}
 	
 	private void moveUpOrDown(OutlineItem outlineItem, boolean up) throws VaultException {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
 		// Get ID of item above or below current item.
 
 		Cursor cursor = null;
-		
+
 		try {
 			// Item can move up if it has a sibling with higher sort order.
-			String queryString = String.format("SELECT ID, SortOrder FROM OutlineItem WHERE ParentID = ? AND SortOrder %s ? ORDER BY SortOrder %s LIMIT 1", up ? "<" : ">", up ? "DESC" : "ASC");
+			final String queryString = String.format("SELECT ID, SortOrder FROM OutlineItem WHERE ParentID = ? AND SortOrder %s ? ORDER BY SortOrder %s LIMIT 1", up ? "<" : ">", up ? "DESC" : "ASC");
 			cursor = database.rawQuery(queryString, new String[] { String.valueOf(outlineItem.getParentId()), String.valueOf(outlineItem.getSortOrder()) });
-			
+
 			if (cursor.moveToNext()) {
 				int siblingID = cursor.getInt(0);
 				int siblingSortOrder = cursor.getInt(1);
@@ -724,8 +766,9 @@ public class VaultDocument {
 			}
 		}
 
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.moveUpOrDown: %d ms", elapsedMilliseconds));
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.moveUpOrDown: %d ms",
+				elapsedMilliseconds));
 	}
 
 	public void moveUp(OutlineItem outlineItem) throws VaultException {
@@ -741,16 +784,13 @@ public class VaultDocument {
 	}
 
 	private int getOutlineItemCount() throws VaultException {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
 		int outlineItemCount = 0;
 		
-		Cursor cursor = null;
-		
-		try {
-			String queryString = "SELECT COUNT(*) FROM OutlineItem";
-			cursor = database.rawQuery(queryString, null);
-			
+		final String queryString = "SELECT COUNT(*) FROM OutlineItem";
+
+		try (final Cursor cursor = database.rawQuery(queryString, null)) {
 			if (cursor.moveToNext()) {
 				outlineItemCount = cursor.getInt(0);
 			}
@@ -758,14 +798,11 @@ public class VaultDocument {
 				throw new VaultException("VaultDocument.getOutlineItemCount: cannot determine count");
 			}
 		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
-		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.getOutlineItemCount: %d ms (%d items)", elapsedMilliseconds, outlineItemCount));
+
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag,
+				String.format("VaultDocument.getOutlineItemCount: %d ms (%d items)",
+						elapsedMilliseconds, outlineItemCount));
 
 		return outlineItemCount;
 	}
@@ -810,13 +847,11 @@ public class VaultDocument {
 	}
 	
 	public void moveTo(OutlineItem movingOutlineItem, OutlineItem selectedOutlineItem, boolean placeAboveSelectedItem) throws VaultException {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
-		database.beginTransaction();
-		
-		Cursor cursor = null;
-		
 		try {
+			database.beginTransaction();
+
 			createGapInSortOrder(selectedOutlineItem.getParentId(), selectedOutlineItem.getSortOrder());
 
 			// Move the movingOutlineItem to the slot right after the selectedOutlineItem.
@@ -824,7 +859,7 @@ public class VaultDocument {
 			contentValues.put(TableAndColumnNames.OutlineItem.ParentID, selectedOutlineItem.getParentId());
 			contentValues.put(TableAndColumnNames.OutlineItem.SortOrder, selectedOutlineItem.getSortOrder() + 1);
 
-			int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName, 
+			final int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName,
 											  contentValues, 
 											  String.format("%s = ?", TableAndColumnNames.OutlineItem.ID), 
 											  new String[] { String.valueOf(movingOutlineItem.getId()) });
@@ -843,15 +878,12 @@ public class VaultDocument {
 			database.setTransactionSuccessful();
 		}
 		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-			
 			database.endTransaction();
 		}
 		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.unIndent: %d ms", elapsedMilliseconds));
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.unIndent: %d ms",
+				elapsedMilliseconds));
 	}
 
 	public boolean canAdd() {
@@ -874,7 +906,7 @@ public class VaultDocument {
 	}
 	
 	private void createGapInSortOrder(int parentID, int sortOrder) {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
 		database.beginTransaction();
 		
@@ -893,7 +925,7 @@ public class VaultDocument {
 	}
 
 	private void swapSortOrders(OutlineItem selectedOutlineItem, OutlineItem newOutlineItem) throws VaultException {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
 		database.beginTransaction();
 		
@@ -932,31 +964,62 @@ public class VaultDocument {
 			database.endTransaction();
 		}
 
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.swapSortOrders: %d ms", elapsedMilliseconds));
 	}
 	
-	public void add(OutlineItem newOutlineItem, OutlineItem selectedOutlineItem, boolean placeAboveSelectedItem) throws VaultException, InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
-		long startTime = System.currentTimeMillis();
+	public void add(OutlineItem newOutlineItem, OutlineItem selectedOutlineItem, boolean placeAboveSelectedItem) throws VaultException, InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+		final long startTime = System.currentTimeMillis();
 
-		if (isEncrypted) {
-			Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(secretKey);
-
-			newOutlineItem.setTitle(CryptoUtils.encryptString(encryptionCipher, newOutlineItem.getTitle()));
-			newOutlineItem.setText(CryptoUtils.encryptString(encryptionCipher, newOutlineItem.getText()));
-		}
-		
 		if (selectedOutlineItem != null) {
 			database.beginTransaction();
 			
 			try {
 				createGapInSortOrder(selectedOutlineItem.getParentId(), selectedOutlineItem.getSortOrder());
 	
+				String title = newOutlineItem.getTitle();
+				String text = newOutlineItem.getText();
+
+				String titleSalt = StringLiterals.EmptyString, titleIV = StringLiterals.EmptyString,
+						textSalt = StringLiterals.EmptyString, textIV = StringLiterals.EmptyString;
+
+				if (isEncrypted) {
+					{
+						final byte[] salt = CryptoUtils.createSalt();
+						titleSalt = new String(Base64Coder.encode(salt));
+
+						final byte[] iv = CryptoUtils.createIV();
+						titleIV = new String(Base64Coder.encode(iv));
+
+						final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(password,
+								getDocumentVersion(), salt, iv);
+
+						title = CryptoUtils.encryptString(encryptionCipher, title);
+					}
+
+					{
+						final byte[] salt = CryptoUtils.createSalt();
+						textSalt = new String(Base64Coder.encode(salt));
+
+						final byte[] iv = CryptoUtils.createIV();
+						textIV = new String(Base64Coder.encode(iv));
+
+						final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(password,
+								getDocumentVersion(), salt, iv);
+
+						text = CryptoUtils.encryptString(encryptionCipher, text);
+					}
+				}
+
 				// Insert the newOutlineItem to the slot right after the selectedOutlineItem.
-				String queryString = "INSERT INTO OutlineItem(Title, Text, SortOrder, ParentID) VALUES(?, ?, ?, ?)";
-				
-				database.execSQL(queryString, 
-								 new String[] { newOutlineItem.getTitle(), newOutlineItem.getText(), String.valueOf(selectedOutlineItem.getSortOrder() + 1), String.valueOf(selectedOutlineItem.getParentId()) } );
+				final String queryString = "INSERT INTO OutlineItem(Title, TitleSalt, TitleIV, Text, TextSalt, TextIV, SortOrder, ParentID) VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+
+				database.execSQL(queryString,
+								 new String[] {
+										 title, titleSalt, titleIV,
+										 text, textSalt, textIV,
+										 String.valueOf(selectedOutlineItem.getSortOrder() + 1),
+										 String.valueOf(selectedOutlineItem.getParentId()) } );
 	
 				newOutlineItem.setId(getLastInsertRowID());
 				
@@ -972,12 +1035,13 @@ public class VaultDocument {
 			}
 		}
 		else /* add first non-root item as child of the root */ {
-			String queryString = "INSERT INTO OutlineItem(Title, Text, SortOrder, ParentID) VALUES(?, ?, 0, 1)";
+			final String queryString = "INSERT INTO OutlineItem(Title, Text, SortOrder, ParentID) VALUES(?, ?, 0, 1)";
 			database.execSQL(queryString, new String[] { newOutlineItem.getTitle(), newOutlineItem.getText() } );
 		}
 		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.add: %d ms", elapsedMilliseconds));
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.add: %d ms",
+				elapsedMilliseconds));
 	}
 	
 	/**
@@ -993,20 +1057,57 @@ public class VaultDocument {
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
 	 */
-	public void updateOutlineItem(OutlineItem outlineItem, String newTitle, String newText) throws VaultException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+	public void updateOutlineItem(OutlineItem outlineItem, String newTitle, String newText)
+			throws VaultException, InvalidKeyException, NoSuchAlgorithmException,
+			NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException,
+			BadPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
 		long startTime = System.currentTimeMillis();
 
-		if (isEncrypted) {
-			Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(secretKey);
+		String titleSalt = StringLiterals.EmptyString, titleIV = StringLiterals.EmptyString,
+				textSalt = StringLiterals.EmptyString, textIV = StringLiterals.EmptyString;
 
-			newTitle = CryptoUtils.encryptString(encryptionCipher, newTitle);
-			newText = CryptoUtils.encryptString(encryptionCipher, newText);
+		if (isEncrypted) {
+			{
+				final byte[] salt = CryptoUtils.createSalt();
+				titleSalt = new String(Base64Coder.encode(salt));
+
+				final byte[] iv = CryptoUtils.createIV();
+				titleIV = new String(Base64Coder.encode(iv));
+
+				final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(
+						password,
+						getDocumentVersion(),
+						salt,
+						iv);
+
+				newTitle = CryptoUtils.encryptString(encryptionCipher, newTitle);
+			}
+
+			{
+				final byte[] salt = CryptoUtils.createSalt();
+				textSalt = new String(Base64Coder.encode(salt));
+
+				final byte[] iv = CryptoUtils.createIV();
+				textIV = new String(Base64Coder.encode(iv));
+
+				final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(
+						password,
+						getDocumentVersion(),
+						salt,
+						iv);
+
+				newText = CryptoUtils.encryptString(encryptionCipher, newText);
+			}
 		}
 		
 		ContentValues contentValues = new ContentValues();
 		contentValues.put(TableAndColumnNames.OutlineItem.Title, newTitle);
+		contentValues.put(TableAndColumnNames.OutlineItem.TitleSalt, titleSalt);
+		contentValues.put(TableAndColumnNames.OutlineItem.TitleIV, titleIV);
 		contentValues.put(TableAndColumnNames.OutlineItem.Text, newText);
-		
+		contentValues.put(TableAndColumnNames.OutlineItem.TextSalt, textSalt);
+		contentValues.put(TableAndColumnNames.OutlineItem.TextIV, textIV);
+
 		int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName, 
 										  contentValues, 
 										  String.format("%s = ?", TableAndColumnNames.OutlineItem.ID), 
@@ -1020,21 +1121,13 @@ public class VaultDocument {
 		Log.i(StringLiterals.LogTag, String.format("VaultDocument.updateOutlineItem: %d ms", elapsedMilliseconds));
 	}
 
-	public void search(Search search, SearchTask searchTask) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, VaultException {
-		long startTime = System.currentTimeMillis();
+	public void search(SearchParameters searchParameters, Search search) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, VaultException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+		final long startTime = System.currentTimeMillis();
 		
-		Cursor cursor = null;
-		
-		Cipher decryptionCipher = null;
-		
-		if (isEncrypted) {
-			decryptionCipher = CryptoUtils.createDecryptionCipher(secretKey);
-		}
-
 		SparseBooleanArray searchScopeItems = null;
 		
-		if (search.getSearchScope() == SearchScope.SelectedOnly) {
-			List<Integer> children = getChildren(search.getSearchScopeID());
+		if (searchParameters.getSearchScope() == SearchScope.SelectedOnly) {
+			final List<Integer> children = getChildren(searchParameters.getSearchScopeID());
 			
 			searchScopeItems = new SparseBooleanArray();
 			
@@ -1042,23 +1135,27 @@ public class VaultDocument {
 				searchScopeItems.put(child, true);
 			}
 		}
-		
-		try {
-			String[] columns = new String[] 
-					{ 
-						/* 0 */ TableAndColumnNames.OutlineItem.ID, 
-						/* 1 */ TableAndColumnNames.OutlineItem.Title, 
-						/* 2 */ TableAndColumnNames.OutlineItem.Text, 
-						/* 3 */ TableAndColumnNames.OutlineItem.ParentID,
-						/* 4 */ TableAndColumnNames.OutlineItem.FontList,
-						/* 5 */ TableAndColumnNames.OutlineItem.Red,
-						/* 6 */ TableAndColumnNames.OutlineItem.Green,
-						/* 7 */ TableAndColumnNames.OutlineItem.Blue 
-					};
-			
-			cursor = database.query(TableAndColumnNames.OutlineItem.TableName, columns, null, null, null, null, null);
 
-			int maxSearchHits = VaultPreferenceActivity.getMaxSearchHits();
+		String[] columns = new String[]
+				{
+						/*  0 */ TableAndColumnNames.OutlineItem.ID,
+						/*  1 */ TableAndColumnNames.OutlineItem.Title,
+						/*  2 */ TableAndColumnNames.OutlineItem.Text,
+						/*  3 */ TableAndColumnNames.OutlineItem.ParentID,
+						/*  4 */ TableAndColumnNames.OutlineItem.FontList,
+						/*  5 */ TableAndColumnNames.OutlineItem.Red,
+						/*  6 */ TableAndColumnNames.OutlineItem.Green,
+						/*  7 */ TableAndColumnNames.OutlineItem.Blue,
+						/*  8 */ TableAndColumnNames.OutlineItem.TitleSalt,
+						/*  9 */ TableAndColumnNames.OutlineItem.TitleIV,
+						/* 10 */ TableAndColumnNames.OutlineItem.TextSalt,
+						/* 11 */ TableAndColumnNames.OutlineItem.TextIV
+				};
+
+		try (final Cursor cursor = database.query(
+				TableAndColumnNames.OutlineItem.TableName, columns,
+				null, null, null, null, null)) {
+			final int maxSearchHits = VaultPreferenceActivity.getMaxSearchHits();
 			int searchHits = 0;
 			
 			while (cursor.moveToNext() && searchHits < maxSearchHits) {
@@ -1066,30 +1163,52 @@ public class VaultDocument {
 				outlineItem.setId(cursor.getInt(0));
 				outlineItem.setParentId(cursor.getInt(3));
 				
-				if ((search.getSearchScope() == SearchScope.All) || (search.getSearchScope() == SearchScope.SelectedOnly && searchScopeItems.get(outlineItem.getId(), false))) {
+				if ((searchParameters.getSearchScope() == SearchScope.All) || (searchParameters.getSearchScope() == SearchScope.SelectedOnly && searchScopeItems.get(outlineItem.getId(), false))) {
 					outlineItem.setTitle(cursor.getString(1));
-
 					outlineItem.setText(cursor.getString(2));
+
 					boolean isTextDecrypted = !isEncrypted;
 					
 					if (isEncrypted) {
-						outlineItem.setTitle(CryptoUtils.decryptString(decryptionCipher, outlineItem.getTitle()));
-						
-						if (search.getSearchFields() == SearchFields.TitlesAndText) {
-							outlineItem.setText(CryptoUtils.decryptString(decryptionCipher, outlineItem.getText()));
-							isTextDecrypted = true;
+						{
+							final byte[] salt = Base64Coder.decode(cursor.getString(8));
+							final byte[] iv = Base64Coder.decode(cursor.getString(9));
+
+							final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+									password, getDocumentVersion(), salt, iv);
+
+							outlineItem.setTitle(CryptoUtils.decryptString(decryptionCipher, outlineItem.getTitle()));
+						}
+
+						if (searchParameters.getSearchFields() == SearchFields.TitlesAndText) {
+							{
+								final byte[] salt = Base64Coder.decode(cursor.getString(10));
+								final byte[] iv = Base64Coder.decode(cursor.getString(11));
+
+								final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+										password, getDocumentVersion(), salt, iv);
+
+								outlineItem.setText(CryptoUtils.decryptString(decryptionCipher, outlineItem.getText()));
+
+								isTextDecrypted = true;
+							}
 						}
 					}
 					
-					boolean isHit = search.isMatch(outlineItem);
+					final boolean isHit = searchParameters.isMatch(outlineItem);
 					
 					if (isHit) {
 						if (!isTextDecrypted) {
+							final byte[] salt = Base64Coder.decode(cursor.getString(10));
+							final byte[] iv = Base64Coder.decode(cursor.getString(11));
+
+							final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+									password, getDocumentVersion(), salt, iv);
+
 							outlineItem.setText(CryptoUtils.decryptString(decryptionCipher, outlineItem.getText()));
-							isTextDecrypted = true;
 						}
 					
-						String fontListString = cursor.getString(4);
+						final String fontListString = cursor.getString(4);
 						
 						if (fontListString != null && fontListString.length() > 0) {
 							FontList fontList = FontList.deserialize(fontListString);
@@ -1097,32 +1216,28 @@ public class VaultDocument {
 							outlineItem.setFontList(fontList);
 						}
 						
-						RGBColor rgbColor = new RGBColor(cursor.getInt(5), cursor.getInt(6), cursor.getInt(7));
+						final RGBColor rgbColor = new RGBColor(cursor.getInt(5), cursor.getInt(6), cursor.getInt(7));
 						outlineItem.setColor(rgbColor);
 						
-						OutlineItem parent = getOutlineItem(outlineItem.getParentId());
-						SearchHit searchHit = new SearchHit(outlineItem, parent);
+						final OutlineItem parent = getOutlineItem(outlineItem.getParentId());
+						final SearchHit searchHit = new SearchHit(outlineItem, parent);
 						
-						searchTask.publishProgress(searchHit);
+						search.reportProgress(searchHit);
 						
 						searchHits++;
 					}
 					
-					if (searchTask.isCancelled()) {
+					if (search.isCancelled()) {
 						Log.i(StringLiterals.LogTag, "VaultDocument.search: cancelled");
 						break;
 					}
 				}
 			}
 		}
-		finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
 
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.search: %d ms", elapsedMilliseconds));
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.search: %d ms",
+				elapsedMilliseconds));
 	}
 
 	public boolean canSort(OutlineItem outlineItem) {
@@ -1130,9 +1245,9 @@ public class VaultDocument {
 	}
 	
 	public void sort(OutlineItem parentOutlineItem) throws VaultException {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
-		OutlineItem[] array = new OutlineItem[parentOutlineItem.getChildren().size()];
+		final OutlineItem[] array = new OutlineItem[parentOutlineItem.getChildren().size()];
 		
 		int index = 0;
 		
@@ -1169,8 +1284,9 @@ public class VaultDocument {
 			database.endTransaction();
 		}
 
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.search: %d ms", elapsedMilliseconds));
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.search: %d ms",
+				elapsedMilliseconds));
 	}
 
 	public void close() {
@@ -1181,15 +1297,15 @@ public class VaultDocument {
 	}
 
 	public static void createNewVaultDocument(String dbFilePath) throws VaultException {
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 
-		File dbFile = new File(dbFilePath);
+		final File dbFile = new File(dbFilePath);
 		
 		if (dbFile.exists()) {
 			boolean deleted = dbFile.delete();
 			
 			if (!deleted) {
-				String errorMessage = String.format("VaultDocument.createNewVaultDocument: cannot delete %s", dbFilePath);
+				final String errorMessage = String.format("VaultDocument.createNewVaultDocument: cannot delete %s", dbFilePath);
 				Log.e(StringLiterals.LogTag, errorMessage);
 				
 				throw new VaultException(errorMessage);
@@ -1212,7 +1328,7 @@ public class VaultDocument {
 
 			createTable =
 					"CREATE TABLE OutlineItem(" +
-							"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, Text TEXT, FontList TEXT," +
+							"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, TitleSalt TEXT, TitleIV TEXT, Text TEXT, TextSalt TEXT, TextIV Text, FontList TEXT," +
 							"Red INTEGER DEFAULT 0, Green INTEGER DEFAULT 0, Blue INTEGER DEFAULT 0," +
 							"PhotoPath TEXT, AllowScaling INTEGER DEFAULT 1, SortOrder INTEGER" +
 							")";
@@ -1227,213 +1343,390 @@ public class VaultDocument {
 		}
 		
 		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.createNewVaultDocument: %d ms", elapsedMilliseconds));
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.createNewVaultDocument: %d ms",
+				elapsedMilliseconds));
 	}
 
 	private enum ChangePasswordAction { addPassword, removePassword, changePassword, noChange }
-	
-	public void changePassword(String newPassword) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, VaultException {
-		long startTime = System.currentTimeMillis();
 
-		ChangePasswordAction action;
-		
-		if (!isEncrypted && newPassword != null && newPassword.length() > 0) {
+	private ChangePasswordAction determinePasswordAction(String newPassword) {
+		final ChangePasswordAction action;
+
+		final boolean newPasswordExists = newPassword != null && newPassword.length() > 0;
+
+		if (!isEncrypted && newPasswordExists) {
 			action = ChangePasswordAction.addPassword;
 		}
-		else if (isEncrypted && (newPassword == null || newPassword.length() == 0)) {
+		else if (isEncrypted && !newPasswordExists) {
 			action = ChangePasswordAction.removePassword;
 		}
-		else if (isEncrypted && newPassword != null && newPassword.length() > 0 && password != null && password.length() > 0 && !newPassword.equals(password)) {
+		else if (isEncrypted && newPasswordExists && !newPassword.equals(password)) {
 			action = ChangePasswordAction.changePassword;
 		}
 		else {
 			action = ChangePasswordAction.noChange;
 		}
+
+		return action;
+	}
+
+	public void changePassword(String newPassword, IReportProgress reportProgress)
+			throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
+			UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException,
+			VaultException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+		final long startTime = System.currentTimeMillis();
+
+		final ChangePasswordAction action = determinePasswordAction(newPassword);
 		
 		if (action != ChangePasswordAction.noChange) {
 			database.beginTransaction();
-	
-			Cursor cursor = null;
-			String cipherText = null;
-			
-			Cipher encryptionCipher = null;
-			SecretKey encryptionSecretKey = null;
-			
-			try {
-				if (action == ChangePasswordAction.addPassword || action == ChangePasswordAction.changePassword) {
-					// Update Ciphertext value in VaultDocumentInfo table.
-					encryptionSecretKey = CryptoUtils.createSecretKey(newPassword);
-					
-					encryptionCipher = CryptoUtils.createEncryptionCipher(encryptionSecretKey);
-	
-					String plainText = getRandomPlainText();
-					cipherText = CryptoUtils.encryptString(encryptionCipher, plainText);
-					
-					ContentValues columnValues = new ContentValues();
-					columnValues.put(TableAndColumnNames.VaultDocumentInfo.Name, CIPHERTEXT_COLUMN_NAME);
-					columnValues.put(TableAndColumnNames.VaultDocumentInfo.Value, cipherText);
-	
-					String whereClause = String.format("%s = ?", TableAndColumnNames.VaultDocumentInfo.Name);
 
-					int rowsUpdated = database.update(TableAndColumnNames.VaultDocumentInfo.TableName, columnValues, whereClause, new String[] { CIPHERTEXT_COLUMN_NAME } );
-					
-					if (rowsUpdated == 0) {
-						long rowID = database.insert(TableAndColumnNames.VaultDocumentInfo.TableName, null, columnValues);
-						
-						if (rowID == -1) {
-							final String errorMessage = "VaultDocument.changePassword: error inserting ciphertext";
-							
-							Log.e(StringLiterals.LogTag, errorMessage);
-							
-							throw new VaultException(errorMessage);
-						}
-					}
-					else if (rowsUpdated > 1) {
-						final String errorMessage = "VaultDocument.changePassword: error updating ciphertext";
-						
-						Log.e(StringLiterals.LogTag, errorMessage);
-						
-						throw new VaultException(errorMessage);
-					}
-				}
-				else /* remove password */ {
-					deleteVaultDocumentInfo(CIPHERTEXT_COLUMN_NAME);
-				}
-				
-				Cipher decryptionCipher = null;
-				
-				if (isEncrypted) {
-					decryptionCipher = CryptoUtils.createDecryptionCipher(secretKey);
-				}
-	
-				String[] columns = new String[] { TableAndColumnNames.OutlineItem.ID, 
-												  TableAndColumnNames.OutlineItem.Title, 
-												  TableAndColumnNames.OutlineItem.Text };
-	
-				cursor = database.query(TableAndColumnNames.OutlineItem.TableName, columns,	null, null, null, null, null);
-				
+			String[] columns = new String[] {
+					/* 0 */ TableAndColumnNames.OutlineItem.ID,
+					/* 1 */ TableAndColumnNames.OutlineItem.Title,
+					/* 2 */ TableAndColumnNames.OutlineItem.Text,
+					/* 3 */ TableAndColumnNames.OutlineItem.TitleSalt,
+					/* 4 */ TableAndColumnNames.OutlineItem.TitleIV,
+					/* 5 */ TableAndColumnNames.OutlineItem.TextSalt,
+					/* 6 */ TableAndColumnNames.OutlineItem.TextIV };
+
+			try (final Cursor cursor = database.query(
+					TableAndColumnNames.OutlineItem.TableName,
+					columns,
+					null, null, null, null, null)) {
+				final int totalItems = getOutlineItemCount();
+				int itemsProcessed = 0;
+
 				while (cursor.moveToNext()) {
 					int id = cursor.getInt(0);
 					String title = cursor.getString(1);
 					String text = cursor.getString(2);
-					
+
 					if (isEncrypted) {
-						title = CryptoUtils.decryptString(decryptionCipher, title);
-						text = CryptoUtils.decryptString(decryptionCipher, text);
+						// Decrypt title.
+						{
+							final byte[] salt = Base64Coder.decode(cursor.getString(3));
+							final byte[] iv = Base64Coder.decode(cursor.getString(4));
+
+							final Cipher decryptionCipher =
+									CryptoUtils.createDecryptionCipher(
+											password, getDocumentVersion(), salt, iv);
+
+							title = CryptoUtils.decryptString(decryptionCipher, title);
+						}
+
+						// Decrypt text.
+						{
+							final byte[] salt = Base64Coder.decode(cursor.getString(5));
+							final byte[] iv = Base64Coder.decode(cursor.getString(6));
+
+							final Cipher decryptionCipher =
+									CryptoUtils.createDecryptionCipher(password,
+											getDocumentVersion(), salt, iv);
+
+							text = CryptoUtils.decryptString(decryptionCipher, text);
+						}
 					}
-	
-					if (action == ChangePasswordAction.addPassword || action == ChangePasswordAction.changePassword) {
-						title = CryptoUtils.encryptString(encryptionCipher, title);
-						text = CryptoUtils.encryptString(encryptionCipher, text);
+
+					String titleSalt = StringLiterals.EmptyString,
+							titleIV = StringLiterals.EmptyString,
+							textSalt = StringLiterals.EmptyString,
+							textIV = StringLiterals.EmptyString;
+
+					if (action == ChangePasswordAction.addPassword ||
+							action == ChangePasswordAction.changePassword) {
+
+						// Encrypt title.
+						{
+							final byte[] salt = CryptoUtils.createSalt();
+							titleSalt = new String(Base64Coder.encode(salt));
+
+							final byte[] iv = CryptoUtils.createIV();
+							titleIV = new String(Base64Coder.encode(iv));
+
+							final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(
+									newPassword, getDocumentVersion(), salt, iv);
+
+							title = CryptoUtils.encryptString(encryptionCipher, title);
+						}
+
+						// Encrypt text.
+						{
+							final byte[] salt = CryptoUtils.createSalt();
+							textSalt = new String(Base64Coder.encode(salt));
+
+							final byte[] iv = CryptoUtils.createIV();
+							textIV = new String(Base64Coder.encode(iv));
+
+							final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(
+									newPassword, getDocumentVersion(), salt, iv);
+
+							text = CryptoUtils.encryptString(encryptionCipher, text);
+						}
 					}
 					
 					ContentValues contentValues = new ContentValues();
 					contentValues.put(TableAndColumnNames.OutlineItem.Title, title);
+					contentValues.put(TableAndColumnNames.OutlineItem.TitleSalt, titleSalt);
+					contentValues.put(TableAndColumnNames.OutlineItem.TitleIV, titleIV);
 					contentValues.put(TableAndColumnNames.OutlineItem.Text, text);
-	
-					final String whereClause = String.format("%s = ?", TableAndColumnNames.OutlineItem.ID);
+					contentValues.put(TableAndColumnNames.OutlineItem.TextSalt, textSalt);
+					contentValues.put(TableAndColumnNames.OutlineItem.TextIV, textIV);
+
+					final String whereClause = String.format("%s = ?",
+							TableAndColumnNames.OutlineItem.ID);
 					
-					int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName, contentValues, whereClause, new String[] { String.valueOf(id) });
+					final int rowsUpdated = database.update(
+							TableAndColumnNames.OutlineItem.TableName,
+							contentValues,
+							whereClause,
+							new String[] { String.valueOf(id) });
 	
 					if (rowsUpdated != 1) {
-						String errorMessage = String.format("VaultDocument.changePassword, could not update outline item %d", id);
+						final String errorMessage = String.format("VaultDocument.changePassword, could not update outline item %d", id);
 						Log.e(StringLiterals.LogTag, errorMessage);
+
 						throw new VaultException(errorMessage);
 					}
+
+					reportProgress.reportProgress(
+							(++itemsProcessed / (float) totalItems) * 100.0f);
 				}
 
-				isEncrypted = (action == ChangePasswordAction.addPassword || action == ChangePasswordAction.changePassword);
+				isEncrypted = (action == ChangePasswordAction.addPassword ||
+						action == ChangePasswordAction.changePassword);
 				setVaultDocumentInfo(ENCRYPTED, isEncrypted ? "1" : "0");
 				
 				this.password = newPassword;
-				this.secretKey = encryptionSecretKey;
-				this.cipherText = cipherText;
-				
+
+				updateVaultDocumentInfoEncryptionData();
+
 				database.setTransactionSuccessful();
 			}
 			finally {
-				if (cursor != null) {
-					cursor.close();
-				}
-	
 				database.endTransaction();
 			}
 		}
 		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.changePassword: %d ms", elapsedMilliseconds));
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.changePassword: %d ms",
+				elapsedMilliseconds));
 	}
 	
 	private String getRandomPlainText() {
-		SecureRandom secureRandom = new SecureRandom();
+		final SecureRandom secureRandom = new SecureRandom();
 
-		byte[] randomBytes = new byte[100];
+		final byte[] randomBytes = new byte[100];
 		secureRandom.nextBytes(randomBytes);
 		
 		return new String(Base64Coder.encode(randomBytes));
 	}
 
-	public void upgradeVaultDocument() throws Throwable {
-		long startTime = System.currentTimeMillis();
-		
+	public void upgradeVaultDocument(String password, IReportProgress reportProgress)
+			throws Throwable {
+		final long startTime = System.currentTimeMillis();
+
 		database.beginTransaction();
 		
 		try {
-			setVaultDocumentInfo("DocumentVersion", VaultDocumentVersion.getLatestVaultDocumentVersion().toString());
+			upgradeSchema();
 
-			/* 
-			 * Replace FontString column in OutlineItem table with FontList column.
-			 *
-			 * SQLite has limited ALTER TABLE support that you can use to add a column to the end of a table or to change the name of a table.
-			 * If you want to make more complex changes in the structure of a table, you will have to recreate the table. You can save
-			 * existing data to a temporary table, drop the old table, create the new table, then copy the data back in from the temporary table.
-			 */
-			
-		    String command = 
-			    	"CREATE TABLE TempOutlineItem(" +
-			    	"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, Text TEXT, " +
-			    	"Red INTEGER DEFAULT 0, Green INTEGER DEFAULT 0, Blue INTEGER DEFAULT 0," +
-			    	"PhotoPath TEXT, AllowScaling INTEGER DEFAULT 1, SortOrder INTEGER" +
-			    	")";
-		    database.execSQL(command);
-		    
-		    command = "INSERT INTO TempOutlineItem SELECT ID, ParentID, Title, Text, Red, Green, Blue, PhotoPath, AllowScaling, SortOrder FROM OutlineItem;";
-		    database.execSQL(command);
-		    
-		    command = "DROP TABLE OutlineItem;";
-		    database.execSQL(command);
-		    
-		    command = 
-			    	"CREATE TABLE OutlineItem(" +
-			    	"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, Text TEXT, FontList TEXT," +
-			    	"Red INTEGER DEFAULT 0, Green INTEGER DEFAULT 0, Blue INTEGER DEFAULT 0," +
-			    	"PhotoPath TEXT, AllowScaling INTEGER DEFAULT 1, SortOrder INTEGER" +
-			    	")";
-		    database.execSQL(command);
-			
-		    command = "INSERT INTO OutlineItem SELECT ID, ParentID, Title, Text, NULL, Red, Green, Blue, PhotoPath, AllowScaling, SortOrder FROM TempOutlineItem;";
-		    database.execSQL(command);
-		    
-		    command = "CREATE INDEX ParentIDIndex ON OutlineItem(ParentID)";
-		    database.execSQL(command);
-		    
-		    command = "DROP TABLE TempOutlineItem;";
-		    database.execSQL(command);
+			if (isEncrypted) {
+				upgradeEncryption(password, reportProgress);
+			} else {
+				reportProgress.reportProgress(100.0f);
+			}
 
-		    database.setTransactionSuccessful();
+			setDocumentVersion(VaultDocumentVersion.VERSION_1_3);
+			setVaultDocumentInfo(DOCUMENT_VERSION,
+					VaultDocumentVersion.getLatestVaultDocumentVersion().toString());
+
+			updateVaultDocumentInfoEncryptionData();
+
+			database.setTransactionSuccessful();
 		}
 		finally {
 			database.endTransaction();
 		}
-		
-		long elapsedMilliseconds = System.currentTimeMillis() - startTime;
-		Log.i(StringLiterals.LogTag, String.format("VaultDocument.upgradeVaultDocument: %d ms", elapsedMilliseconds));
+
+		Globals.getApplication().getPasswordCache().put(database.getPath(), password);
+
+		final long elapsedMilliseconds = System.currentTimeMillis() - startTime;
+		Log.i(StringLiterals.LogTag, String.format("VaultDocument.upgradeVaultDocument: %d ms",
+				elapsedMilliseconds));
+	}
+
+	private void upgradeSchema() {
+		/*
+		 * Replace FontString column in OutlineItem table with FontList column.
+		 *
+		 * SQLite has limited ALTER TABLE support that you can use to add a column to the end of a table or to change the name of a table.
+		 * If you want to make more complex changes in the structure of a table, you will have to recreate the table. You can save
+		 * existing data to a temporary table, drop the old table, create the new table, then copy the data back in from the temporary table.
+		 */
+
+		if (getDocumentVersion().compareTo(VaultDocumentVersion.VERSION_1_2) < 0) {
+			String command =
+					"CREATE TABLE TempOutlineItem(" +
+							"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, Text TEXT, " +
+							"Red INTEGER DEFAULT 0, Green INTEGER DEFAULT 0, Blue INTEGER DEFAULT 0," +
+							"PhotoPath TEXT, AllowScaling INTEGER DEFAULT 1, SortOrder INTEGER" +
+							")";
+			database.execSQL(command);
+
+			command = "INSERT INTO TempOutlineItem SELECT ID, ParentID, Title, Text, Red, Green, Blue, PhotoPath, AllowScaling, SortOrder FROM OutlineItem;";
+			database.execSQL(command);
+
+			command = "DROP TABLE OutlineItem;";
+			database.execSQL(command);
+
+			command =
+					"CREATE TABLE OutlineItem(" +
+							"ID INTEGER PRIMARY KEY, ParentID INTEGER, Title TEXT, Text TEXT, FontList TEXT," +
+							"Red INTEGER DEFAULT 0, Green INTEGER DEFAULT 0, Blue INTEGER DEFAULT 0," +
+							"PhotoPath TEXT, AllowScaling INTEGER DEFAULT 1, SortOrder INTEGER" +
+							")";
+			database.execSQL(command);
+
+			command = "INSERT INTO OutlineItem SELECT ID, ParentID, Title, Text, NULL, Red, Green, Blue, PhotoPath, AllowScaling, SortOrder FROM TempOutlineItem;";
+			database.execSQL(command);
+
+			command = "CREATE INDEX ParentIDIndex ON OutlineItem(ParentID)";
+			database.execSQL(command);
+
+			command = "DROP TABLE TempOutlineItem;";
+			database.execSQL(command);
+		}
+
+		if (getDocumentVersion().compareTo(VaultDocumentVersion.VERSION_1_3) < 0) {
+			// Add version 1.3 cryptography columns.
+			String[] newColumns = new String[]{"TitleSalt", "TitleIV", "TextSalt", "TextIV"};
+
+			// https://www.sqlite.org/lang_altertable.html
+			Arrays.stream(newColumns)
+					.forEach(columnName -> {
+						final String addColumnCommand =
+								String.format("ALTER TABLE OutlineItem ADD COLUMN %s TEXT",
+										columnName);
+
+						database.execSQL(addColumnCommand);
+					});
+		}
+	}
+
+	private void upgradeEncryption(String password, IReportProgress reportProgress)
+			throws InvalidAlgorithmParameterException, NoSuchPaddingException,
+			UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeySpecException,
+			InvalidKeyException, IllegalBlockSizeException, BadPaddingException, VaultException {
+		String[] columns = new String[] {
+				/* 0 */ TableAndColumnNames.OutlineItem.ID,
+				/* 1 */ TableAndColumnNames.OutlineItem.Title,
+				/* 2 */ TableAndColumnNames.OutlineItem.Text
+		};
+
+		try (final Cursor cursor = database.query(
+				TableAndColumnNames.OutlineItem.TableName,
+				columns,
+				null, null, null, null, null)) {
+
+			final int totalItems = getOutlineItemCount();
+			int itemsProcessed = 0;
+
+			while (cursor.moveToNext()) {
+				final int id = cursor.getInt(0);
+				String title = cursor.getString(1);
+				String text = cursor.getString(2);
+
+				// decrypt title.
+				{
+					final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+							password, getDocumentVersion(), null, null);
+
+					title = CryptoUtils.decryptString(decryptionCipher, title);
+				}
+
+				// decrypt text
+				{
+					final Cipher decryptionCipher = CryptoUtils.createDecryptionCipher(
+							password, getDocumentVersion(), null, null);
+
+					text = CryptoUtils.decryptString(decryptionCipher, text);
+				}
+
+				String titleSalt, titleIV;
+
+				// encrypt title
+				{
+					final byte[] salt = CryptoUtils.createSalt();
+					titleSalt = new String(Base64Coder.encode(salt));
+
+					final byte[] iv = CryptoUtils.createIV();
+					titleIV = new String(Base64Coder.encode(iv));
+
+					final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(
+							password, VaultDocumentVersion.getLatestVaultDocumentVersion(),
+							salt, iv);
+
+					title = CryptoUtils.encryptString(encryptionCipher, title);
+				}
+
+				String textSalt, textIV;
+
+				// encrypt text
+				{
+					final byte[] salt = CryptoUtils.createSalt();
+					textSalt = new String(Base64Coder.encode(salt));
+
+					final byte[] iv = CryptoUtils.createIV();
+					textIV = new String(Base64Coder.encode(iv));
+
+					final Cipher encryptionCipher = CryptoUtils.createEncryptionCipher(
+							password, VaultDocumentVersion.getLatestVaultDocumentVersion(),
+							salt, iv);
+
+					text = CryptoUtils.encryptString(encryptionCipher, text);
+				}
+
+				// Update text, title, and associated data
+				ContentValues contentValues = new ContentValues();
+				contentValues.put(TableAndColumnNames.OutlineItem.Title, title);
+				contentValues.put(TableAndColumnNames.OutlineItem.TitleSalt, titleSalt);
+				contentValues.put(TableAndColumnNames.OutlineItem.TitleIV, titleIV);
+				contentValues.put(TableAndColumnNames.OutlineItem.Text, text);
+				contentValues.put(TableAndColumnNames.OutlineItem.TextSalt, textSalt);
+				contentValues.put(TableAndColumnNames.OutlineItem.TextIV, textIV);
+
+				final String whereClause = String.format("%s = ?",
+						TableAndColumnNames.OutlineItem.ID);
+
+				final int rowsUpdated = database.update(
+						TableAndColumnNames.OutlineItem.TableName,
+						contentValues,
+						whereClause,
+						new String[]{String.valueOf(id)});
+
+				if (rowsUpdated != 1) {
+					final String errorMessage = String.format(
+							"VaultDocument.changePassword, could not update outline item %d", id);
+					Log.e(StringLiterals.LogTag, errorMessage);
+
+					throw new VaultException(errorMessage);
+				}
+
+				reportProgress.reportProgress(
+						(++itemsProcessed / (float) totalItems) * 100.0f);
+			}
+		}
+
+		this.password = password;
+
+		setVaultDocumentInfo(ENCRYPTED, "1");
 	}
 
 	public void updateFont(OutlineItem outlineItem, AndroidFont font, int color) throws Throwable {
 		long startTime = System.currentTimeMillis();
 		
-		String oldFontListText = "";
+		String oldFontListText = StringLiterals.EmptyString;
 		
 		if (outlineItem.getFontList() != null) {
 			oldFontListText = FontList.serialize(outlineItem.getFontList());
@@ -1444,11 +1737,13 @@ public class VaultDocument {
 		
 		outlineItem.getFontList().add(font);
 		
-		String newFontListText = FontList.serialize(outlineItem.getFontList());
+		final String newFontListText = FontList.serialize(outlineItem.getFontList());
 		
-		RGBColor rgbColor = new RGBColor(Color.red(color), Color.green(color), Color.blue(color));
+		final RGBColor rgbColor =
+				new RGBColor(Color.red(color), Color.green(color), Color.blue(color));
 
-		boolean colorChanged = outlineItem.getColor() == null || !outlineItem.getColor().equals(rgbColor); 
+		final boolean colorChanged =
+				outlineItem.getColor() == null || !outlineItem.getColor().equals(rgbColor);
 				
 		// Only update the database if the font list really changed.
 		if (!oldFontListText.equals(newFontListText) || colorChanged) {
@@ -1461,7 +1756,7 @@ public class VaultDocument {
 				contentValues.put(TableAndColumnNames.OutlineItem.Green, rgbColor.getGreen());
 				contentValues.put(TableAndColumnNames.OutlineItem.Blue, rgbColor.getBlue());
 	
-				int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName, 
+				final int rowsUpdated = database.update(TableAndColumnNames.OutlineItem.TableName,
 												  contentValues, 
 												  String.format("%s = ?", TableAndColumnNames.OutlineItem.ID), 
 												  new String[] { String.valueOf(outlineItem.getId()) });
@@ -1519,7 +1814,7 @@ public class VaultDocument {
 	 * @throws Exception
 	 */
 	public static void verifyVaultDocumentVersion(VaultDocumentVersion dbVaultDocumentVersion) throws Exception {
-		VaultDocumentVersion codeVaultDocumentVersion = VaultDocumentVersion.getLatestVaultDocumentVersion();
+		final VaultDocumentVersion codeVaultDocumentVersion = VaultDocumentVersion.getLatestVaultDocumentVersion();
 		
 		if (dbVaultDocumentVersion.compareTo(codeVaultDocumentVersion) > 0) {
 			throw new VaultException("Database version is too high", VaultException.ExceptionCode.DatabaseVersionTooHigh);
@@ -1531,11 +1826,7 @@ public class VaultDocument {
 		
 		isEncrypted = databaseIsEncrypted();
 		
-		if (isEncrypted) {
-			cipherText = getVaultDocumentInfo(CIPHERTEXT_COLUMN_NAME);
-		}
-		
-		String documentVersionString = getVaultDocumentInfo("DocumentVersion");
+		final String documentVersionString = getVaultDocumentInfo(DOCUMENT_VERSION);
 		documentVersion = new VaultDocumentVersion(documentVersionString);
 	}
 }

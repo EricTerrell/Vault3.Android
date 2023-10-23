@@ -20,15 +20,31 @@
 
 package com.ericbt.vault3base;
 
-import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
-import com.ericbt.vault3base.async_tasks.upgrade_vault_document.UpgradeVaultDocumentTask;
-import com.ericbt.vault3base.async_tasks.upgrade_vault_document.UpgradeVaultDocumentTaskParameters;
+import com.ericbt.vault3base.async.workers.UpgradeVaultDocument;
+import com.ericbt.vault3base.async.UpdateStatus;
 
-public class UpgradeVaultDocumentActivity extends Activity {
+import commonCode.VaultDocumentVersion;
+
+public class UpgradeVaultDocumentActivity extends AsyncTaskActivity {
 	public static final int RESULT_EXCEPTION = RESULT_FIRST_USER;
-	
+
+	private TextView upgradeWarning, percentText;
+
+	private Button okButton, cancelButton;
+
+	private LinearLayout buttons, percentCompleteUI;
+
+	private ProgressBar progressBar;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -36,11 +52,75 @@ public class UpgradeVaultDocumentActivity extends Activity {
 		setContentView(R.layout.upgrade_vault_document);
 		
 		setTitle("Upgrade Vault 3 Document");
-		
-		new UpgradeVaultDocumentTask().execute(new UpgradeVaultDocumentTaskParameters(getIntent().getExtras().getString(StringLiterals.DBPath), this));
+
+		final String upgradeWarningFormat = getText(R.string.upgrade_warning).toString();
+		final String upgradeWarningText = String.format(upgradeWarningFormat,
+				VaultDocumentVersion.getLatestVaultDocumentVersion());
+
+		upgradeWarning = findViewById(R.id.upgrade_warning);
+		upgradeWarning.setText(upgradeWarningText);
+
+		buttons = findViewById(R.id.Buttons);
+		percentCompleteUI = findViewById(R.id.percentCompleteUI);
+		progressBar = findViewById(R.id.progressBar);
+		percentText = findViewById(R.id.percentText);
+
+		okButton = findViewById(R.id.OKButton);
+
+		okButton.setOnClickListener(v -> {
+			okButton.setEnabled(enabled);
+			cancelButton.setEnabled(enabled);
+
+			buttons.setVisibility(View.GONE);
+			percentCompleteUI.setVisibility(View.VISIBLE);
+
+			new UpgradeVaultDocument().upgradeVaultDocument(
+					getIntent().getExtras().getString(StringLiterals.DBPath),
+					getIntent().getExtras().getString(StringLiterals.Password),
+					this);
+		});
+
+		cancelButton = findViewById(R.id.CancelButton);
+
+		cancelButton.setOnClickListener(v -> {
+			setResult(RESULT_CANCELED);
+			finish();
+		});
+	}
+
+	@Override
+	public void enable(boolean enabled) {
 	}
 
 	@Override
 	public void onBackPressed() {
+		// Do not allow user to hit back while the password is being changed.
+	}
+
+	public void finish(Throwable ex, String dbPath) {
+		final String message = ex == null ? "Document upgraded.\n\nMake sure that all Vault 3 apps (desktop and Android) are updated." : "Cannot upgrade document.";
+		final int result = ex == null ? RESULT_OK : RESULT_EXCEPTION;
+
+		new AlertDialog.Builder(this)
+				.setTitle("Upgrade Vault 3 Document")
+				.setMessage(message)
+				.setPositiveButton("OK", (dialog, which) -> {
+					dialog.dismiss();
+
+					final Intent returnData = new Intent();
+					returnData.putExtra(StringLiterals.DBPath, dbPath);
+
+					setResult(result, returnData);
+					finish();
+				})
+				.setCancelable(false)
+				.create()
+				.show();
+	}
+
+	public void progressUpdate(UpdateStatus updateStatus) {
+		progressBar.setProgress((int) updateStatus.getPercent());
+
+		percentText.setText(String.format("%.2f %%", updateStatus.getPercent()));
 	}
 }

@@ -51,19 +51,19 @@ public class FileArrayAdapter extends ArrayAdapter<DocumentFile> {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
-            LayoutInflater infalInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            final LayoutInflater infalInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         	convertView = infalInflater.inflate(resource, null);
         }
         
         final DocumentFile documentFile = getItem(position);
 		final String text = documentFile.getName();
 
-        TextView textView = convertView.findViewById(textViewResourceId);
+        final TextView textView = convertView.findViewById(textViewResourceId);
     	textView.setText(new File(text).getName());
     	
 		textView.setTextColor(enabled ? Color.WHITE : Color.DKGRAY);
 
-		View display = convertView.findViewById(R.id.display);
+		final View display = convertView.findViewById(R.id.display);
 
 		display.setOnClickListener(v -> v.performLongClick());
     	

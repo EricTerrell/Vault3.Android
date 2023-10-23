@@ -41,10 +41,8 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.ericbt.vault3base.async_tasks.update_font.UpdateFontTask;
-import com.ericbt.vault3base.async_tasks.update_font.UpdateFontTaskParameters;
-import com.ericbt.vault3base.async_tasks.update_outline_item.UpdateOutlineItemTask;
-import com.ericbt.vault3base.async_tasks.update_outline_item.UpdateOutlineItemTaskParameters;
+import com.ericbt.vault3base.async.workers.UpdateFont;
+import com.ericbt.vault3base.async.workers.UpdateOutlineItem;
 
 import fonts.AndroidFont;
 import fonts.FontList;
@@ -69,7 +67,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.text_fragment, container, false);
+        final View view = inflater.inflate(R.layout.text_fragment, container, false);
 
         if (savedInstanceState != null) {
             outlineItemId = savedInstanceState.getInt(StringLiterals.OutlineItemId);
@@ -165,7 +163,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
         edit = view.findViewById(R.id.Edit);
 
         edit.setOnClickListener(v -> {
-            Intent intent = new Intent(TextFragment.this.getActivity(), EditItemActivity.class);
+            final Intent intent = new Intent(TextFragment.this.getActivity(), EditItemActivity.class);
             intent.putExtra(StringLiterals.Title, titleText);
             intent.putExtra(StringLiterals.Text, textText);
             intent.putExtra(StringLiterals.OutlineItemId, TextFragment.this.getActivity().getIntent().getExtras().getInt(StringLiterals.OutlineItemId));
@@ -197,7 +195,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
         setFont = view.findViewById(R.id.SetFont);
 
         setFont.setOnClickListener(v -> {
-            Intent intent = new Intent(TextFragment.this.getActivity(), SetFontActivity.class);
+            final Intent intent = new Intent(TextFragment.this.getActivity(), SetFontActivity.class);
 
             intent.putExtra(StringLiterals.FontName, fontName);
             intent.putExtra(StringLiterals.FontSizeInPoints, fontSize);
@@ -250,7 +248,7 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
+        final ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
 
         if (item.getItemId() == MenuItemEnum.CopyTitle.ordinal()) {
             clipboard.setPrimaryClip(ClipData.newPlainText("Outline Item Title", getActivity().getIntent().getExtras().getString(StringLiterals.Title)));
@@ -364,13 +362,12 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
 
                     enable(false);
 
-                    new UpdateFontTask().execute(
-                            new UpdateFontTaskParameters(
-                                    newFont,
-                                    outlineItem,
-                                    newColor,
-                                    this,
-                                    TextFragment.this.getActivity()));
+                    new UpdateFont().updateFont(
+                            newFont,
+                            outlineItem,
+                            newColor,
+                            this,
+                            TextFragment.this.getActivity());
                 }
             }
             break;
@@ -382,17 +379,15 @@ public class TextFragment extends Fragment implements TextDisplayUpdate {
 
                     enable(false);
 
-                    new UpdateOutlineItemTask().execute(
-                            new UpdateOutlineItemTaskParameters(
+                    new UpdateOutlineItem().updateOutlineItem(
                                     outlineItem,
                                     data.getExtras().getString(StringLiterals.Title),
                                     data.getExtras().getString(StringLiterals.Text),
                                     this,
-                                    TextFragment.this.getActivity()));
+                                    TextFragment.this.getActivity());
                 }
             }
             break;
         }
     }
-
 }

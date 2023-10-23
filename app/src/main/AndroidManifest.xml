@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.ericbt.vault3base"
-    android:versionCode="15183"
-    android:versionName="1.83">
+    android:versionCode="15185"
+    android:versionName="1.85">
 
     <application
         android:name="com.ericbt.vault3base.VaultApplication"
@@ -37,13 +36,13 @@
 
         <activity
             android:name="com.ericbt.vault3base.VaultPreferenceActivity"
-            android:label="Settings">
+            android:label="Settings"
+            android:theme="@style/Theme.AppCompat">
         </activity>
 
         <activity android:name="com.ericbt.vault3base.FileActivity" />
         <activity android:name="com.ericbt.vault3base.TextActivity" />
         <activity android:name="com.ericbt.vault3base.SearchActivity" />
-        <activity android:name="com.ericbt.vault3base.NewDocumentActivity" />
         <activity android:name="com.ericbt.vault3base.PasswordPromptActivity" />
         <activity android:name="com.ericbt.vault3base.AboutActivity" />
         <activity android:name="com.ericbt.vault3base.SearchOptionsActivity" />
@@ -52,6 +51,7 @@
         <activity android:name="com.ericbt.vault3base.RemoveDocumentActivity" />
         <activity android:name="com.ericbt.vault3base.UpgradeActivity" />
         <activity android:name="com.ericbt.vault3base.ChangePasswordActivity" />
+        <activity android:name="com.ericbt.vault3base.ChangePasswordProcessingActivity" />
         <activity android:name="com.ericbt.vault3base.RemoveOutlineItemActivity" />
         <activity android:name="com.ericbt.vault3base.UpgradeVaultDocumentActivity" />
         <activity android:name="com.ericbt.vault3base.MoveItemHereActivity" />

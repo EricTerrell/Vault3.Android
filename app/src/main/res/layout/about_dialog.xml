@@ -3,9 +3,7 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:scrollbars="vertical"
-    android:layout_marginLeft="5dp"
-    android:layout_marginRight="5dp"
-    android:layout_marginTop="5dp"
+    style="@style/Activity"
    >
 
     <LinearLayout
@@ -29,7 +27,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:autoLink="web"
-            android:text="www.EricBT.com" >
+            android:text="https://www.EricBT.com" >
         </TextView>
 
         <TextView
@@ -37,7 +35,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dip"
             android:autoLink="web"
-            android:text="Vault 3 is also available for Windows, OS X, and Linux: http://www.ericbt.com/Vault3"
+            android:text="Vault 3 is also available for Windows, OS X, and Linux: https://www.ericbt.com/Vault3"
             android:textColor="?android:attr/textColorPrimary" >
         </TextView>
 
@@ -46,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dip"
             android:autoLink="web"
-            android:text="Vault 3 uses Christian d&apos;Heureuse&apos;s Base64Coder class: http://www.source-code.biz"
+            android:text="Vault 3 uses Christian d&apos;Heureuse&apos;s Base64Coder class: https://www.source-code.biz"
             android:textColor="?android:attr/textColorPrimary" >
         </TextView>
 

@@ -24,6 +24,11 @@ import android.app.Application;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import com.ericbt.vault3base.async.Async;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class VaultApplication extends Application {
 	private VaultDocument vaultDocument;
 
@@ -78,13 +83,28 @@ public class VaultApplication extends Application {
 		Thread.setDefaultUncaughtExceptionHandler(new CustomUncaughtExceptionHandler());
 	}
 
+	private ExecutorService executorService = null;
+
+	public ExecutorService getExecutorService() {
+		synchronized (Async.class) {
+			if (executorService == null) {
+				Log.i(StringLiterals.LogTag,
+						"VaultApplication.getExecutorService: creating ExecutorService");
+
+				executorService = Executors.newSingleThreadExecutor();
+			}
+
+			return executorService;
+		}
+	}
+
 	@Override
 	public void onLowMemory() {
 		Log.i(StringLiterals.LogTag, "VaultApplication.onLowMemory");
 		
 		super.onLowMemory();
 		
-		int bytesReleased = SQLiteDatabase.releaseMemory();
+		final int bytesReleased = SQLiteDatabase.releaseMemory();
 		Log.i(StringLiterals.LogTag, String.format("Released %d bytes", bytesReleased));
 	}
 

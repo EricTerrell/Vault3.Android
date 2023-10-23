@@ -5,8 +5,8 @@
     <string name="email_download_url"></string>
     <string name="link_to_map">true</string>
     <string name="default_root_folder_path"></string>
-    <string name="online_help_url">http://www.ericbt.com/Vault3ForAndroid</string>
-    <string name="cloud_sync_url">http://www.ericbt.com/Vault3ForAndroid/misc#cloudsync</string>
+    <string name="online_help_url">https://www.ericbt.com/Vault3ForAndroid</string>
+    <string name="cloud_sync_url">https://www.ericbt.com/Vault3ForAndroid/misc#cloudsync</string>
     <string name="app_version"></string>
 
     <string name="current_doc_must_be_closed">Close document \"%s\" before removing, renaming, or copying.</string>
@@ -14,6 +14,9 @@
     <string name="permissions">Permissions</string>
     <string name="permissions_not_granted">Permissions were not granted.\n\nVault 3 will not function correctly until permissions are granted.\n\nPermissions are necessary to read and write Vault 3 documents.\n\nClick \"Request Permissions\" to grant permissions.</string>
     <string name="game_over">Vault 3 will not function without permissions. Please un-install Vault 3.</string>
+
+    <string name="change_password_processing_title">Processing Password Change</string>
+    <string name="upgrade_warning">The current Vault 3 document must be upgraded to version %s.\n\nAfter upgrading, you will need to ensure that all Vault 3 apps that will open this document have been updated.</string>
 
     <string name="app_store"></string>
     <string name="bn_EAN"></string>

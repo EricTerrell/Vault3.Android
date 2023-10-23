@@ -44,18 +44,12 @@ import android.widget.Toast;
 
 import androidx.documentfile.provider.DocumentFile;
 
-import com.ericbt.vault3base.async_tasks.change_password.ChangePasswordTask;
-import com.ericbt.vault3base.async_tasks.change_password.ChangePasswordTaskParameters;
-import com.ericbt.vault3base.async_tasks.clone_document.CloneDocumentFileTask;
-import com.ericbt.vault3base.async_tasks.clone_document.CloneDocumentFileTaskParameters;
-import com.ericbt.vault3base.async_tasks.create_database.CreateDatabaseTask;
-import com.ericbt.vault3base.async_tasks.create_database.CreateDatabaseTaskParameters;
-import com.ericbt.vault3base.async_tasks.delete_document_file.DeleteDocumentFileTask;
-import com.ericbt.vault3base.async_tasks.delete_document_file.DeleteDocumentFileTaskParameters;
-import com.ericbt.vault3base.async_tasks.find_vault_files.FindVaultFilesTask;
-import com.ericbt.vault3base.async_tasks.find_vault_files.FindVaultFilesTaskParameters;
-import com.ericbt.vault3base.async_tasks.open_document_file.OpenDocumentFileTask;
-import com.ericbt.vault3base.async_tasks.open_document_file.OpenDocumentFileTaskParameters;
+import com.ericbt.vault3base.async.workers.document_file_manipulation.CloneDocumentFile;
+import com.ericbt.vault3base.async.workers.document_file_manipulation.CreateDatabase;
+import com.ericbt.vault3base.async.workers.document_file_manipulation.DeleteDocumentFile;
+import com.ericbt.vault3base.async.workers.document_file_manipulation.DeleteDocumentFileSilent;
+import com.ericbt.vault3base.async.workers.document_file_manipulation.FindVaultFiles;
+import com.ericbt.vault3base.async.workers.OpenDocumentFile;
 
 public class FileActivity extends AsyncTaskActivity {
 	private FileArrayAdapter arrayAdapter;
@@ -69,6 +63,7 @@ public class FileActivity extends AsyncTaskActivity {
 	private static final int RENAME_DOCUMENT = 4;
 	private static final int COPY_DOCUMENT = 5;
 	private static final int BROWSE = 6;
+	private static final int CHANGE_PASSWORD_PROCESSING = 7;
 
 	private Uri folderUri;
 
@@ -116,7 +111,7 @@ public class FileActivity extends AsyncTaskActivity {
 		passwordButton = findViewById(R.id.Password);
 		
 		passwordButton.setOnClickListener(v -> {
-			Intent intent = new Intent(FileActivity.this, ChangePasswordActivity.class);
+			final Intent intent = new Intent(FileActivity.this, ChangePasswordActivity.class);
 			startActivityForResult(intent, CHANGE_PASSWORD);
 		});
 		
@@ -175,10 +170,7 @@ public class FileActivity extends AsyncTaskActivity {
 
 			setEnabled(false);
 
-			final FindVaultFilesTaskParameters findVaultFilesTaskParameters =
-					new FindVaultFilesTaskParameters(this, folderUri);
-
-			new FindVaultFilesTask().execute(findVaultFilesTaskParameters);
+			new FindVaultFiles().findVaultFiles(this, folderUri);
 		}
 	}
 	
@@ -281,11 +273,8 @@ public class FileActivity extends AsyncTaskActivity {
 					final Uri documentUri =
 							Uri.parse(data.getStringExtra(StringLiterals.DocumentUri));
 
-					final DeleteDocumentFileTaskParameters deleteDocumentFileTaskParameters =
-							new DeleteDocumentFileTaskParameters(
-									documentUri, null,this);
-
-					new DeleteDocumentFileTask().execute(deleteDocumentFileTaskParameters);
+					new DeleteDocumentFile()
+							.deleteDocumentFile(documentUri, folderUri, null,this);
 				}
 				break;
 			}
@@ -299,17 +288,17 @@ public class FileActivity extends AsyncTaskActivity {
 					final String tempFileName = segments[segments.length - 1];
 
 					if (tempFileName.toLowerCase(Locale.ROOT).endsWith(StringLiterals.FileType)) {
-						final String tempFilePath = String.format("%s/%s", DocumentFileUtils.getTempFolderPath(this), tempFileName);
+						final String tempFilePath = String.format("%s/%s",
+								DocumentFileUtils.getTempFolderPath(this), tempFileName);
 
 						setEnabled(false);
 
-						new CreateDatabaseTask().execute(
-								new CreateDatabaseTaskParameters(
-										tempFilePath,
-										databaseUri,
-										this));
+						new CreateDatabase().createDatabase(tempFilePath, databaseUri, folderUri,
+								this);
 					} else {
 						displayFileTypeRequiredMessage();
+
+						new DeleteDocumentFileSilent().deleteDocumentFileSilent(databaseUri, this);
 					}
 				}
 			}
@@ -317,9 +306,20 @@ public class FileActivity extends AsyncTaskActivity {
 
 			case CHANGE_PASSWORD: {
 				if (resultCode == RESULT_OK) {
-					setEnabled(false);
+					final Intent intent = new Intent(FileActivity.this,
+							ChangePasswordProcessingActivity.class);
 
-					new ChangePasswordTask().execute(new ChangePasswordTaskParameters(data.getStringExtra(StringLiterals.NewPassword), this));
+					intent.putExtra(StringLiterals.NewPassword,
+							data.getStringExtra(StringLiterals.NewPassword));
+
+					startActivityForResult(intent, CHANGE_PASSWORD_PROCESSING);
+				}
+			}
+			break;
+
+			case CHANGE_PASSWORD_PROCESSING: {
+				if (resultCode != RESULT_OK) {
+					closeActiveDocument();
 				}
 			}
 			break;
@@ -359,16 +359,16 @@ public class FileActivity extends AsyncTaskActivity {
 			if (destDocumentFileUri.toString().toLowerCase(Locale.ROOT).endsWith(StringLiterals.FileType)) {
 				setEnabled(false);
 
-				final CloneDocumentFileTaskParameters cloneDocumentFileTaskParameters =
-						new CloneDocumentFileTaskParameters(
-								selectedFile.getUri(),
-								destDocumentFileUri,
-								this,
-								deleteSourceDocumentFile);
-
-				new CloneDocumentFileTask().execute(cloneDocumentFileTaskParameters);
+				new CloneDocumentFile().cloneDocumentFile(selectedFile.getUri(),
+						destDocumentFileUri,
+						folderUri,
+						this,
+						deleteSourceDocumentFile);
 			} else {
 				displayFileTypeRequiredMessage();
+
+				new DeleteDocumentFileSilent().deleteDocumentFileSilent(destDocumentFileUri,
+						this);
 			}
 		}
 	}
@@ -395,13 +395,6 @@ public class FileActivity extends AsyncTaskActivity {
 		return result;
 	}
 
-    /**
-     * Automatically do a search after a file has been copied, so that the new file is displayed.
-     */
-    public void programmaticSearch() {
-		searchForVaultFiles();
-    }
-
     public void updateFileList(DocumentFile[] documentFiles) {
 		arrayAdapter.clear();
 		arrayAdapter.addAll(documentFiles);
@@ -409,8 +402,8 @@ public class FileActivity extends AsyncTaskActivity {
 
 	private void displayFileTypeRequiredMessage() {
 		new AlertDialog.Builder(this)
-				.setTitle("Missing File Type")
-				.setMessage(String.format("File name must end in \"%s\"", StringLiterals.FileType))
+				.setTitle("Error")
+				.setMessage(String.format("File already exists, or file name is missing file type. File name must end in \"%s\"", StringLiterals.FileType))
 				.setPositiveButton("OK", null)
 				.create()
 				.show();
@@ -440,12 +433,9 @@ public class FileActivity extends AsyncTaskActivity {
 
 		VaultPreferenceActivity.setSelectedFileUri(selectedFile.getUri());
 
-		final OpenDocumentFileTaskParameters params = new
-				OpenDocumentFileTaskParameters(selectedFile.getUri(),
+		new OpenDocumentFile().openDocumentFile(selectedFile.getUri(),
 				selectedFile.getName(),
 				this);
-
-		new OpenDocumentFileTask().execute(params);
 	}
 
 	private void conditionallyOpenNewDocument(AdapterView<?> parent, int position) {

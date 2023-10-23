@@ -26,8 +26,15 @@ public class TableAndColumnNames {
 		
 		public static final String ID        = "ID";
 		public static final String ParentID  = "ParentID";
+
 		public static final String Title     = "Title";
+		public static final String TitleSalt = "TitleSalt";
+		public static final String TitleIV   = "TitleIV";
+
 		public static final String Text      = "Text";
+		public static final String TextSalt  = "TextSalt";
+		public static final String TextIV    = "TextIV";
+
 		public static final String SortOrder = "SortOrder";
 		public static final String FontList  = "FontList";
 		public static final String Red       = "Red";

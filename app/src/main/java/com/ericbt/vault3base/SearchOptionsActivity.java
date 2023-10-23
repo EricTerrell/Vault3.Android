@@ -27,9 +27,9 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Spinner;
 
-import com.ericbt.vault3base.Search.MustFind;
-import com.ericbt.vault3base.Search.SearchFields;
-import com.ericbt.vault3base.Search.SearchScope;
+import com.ericbt.vault3base.SearchParameters.MustFind;
+import com.ericbt.vault3base.SearchParameters.SearchFields;
+import com.ericbt.vault3base.SearchParameters.SearchScope;
 
 public class SearchOptionsActivity extends Activity {
 	@Override
