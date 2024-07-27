@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2023, Eric Bergman-Terrell
+  (C) Copyright 2024, Eric Bergman-Terrell
 
   This file is part of Vault 3.
 
@@ -46,6 +46,13 @@ import com.ericbt.vault3base.async.workers.UpdateOutlineItem;
 
 import fonts.AndroidFont;
 import fonts.FontList;
+
+/*
+Allows user to view and edit a selected outline item's contents. This fragment is used in two ways:
+
+1) Portrait Mode: Part of the TextActivity launched from the main view when an item is long-clicked.
+2) Landscape Mode: As the right part of the main view when an item is clicked.
+*/
 
 public class TextFragment extends Fragment implements TextDisplayUpdate {
     private String titleText, textText, fontName;

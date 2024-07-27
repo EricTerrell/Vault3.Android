@@ -1,6 +1,6 @@
 /*
   Vault 3
-  (C) Copyright 2023, Eric Bergman-Terrell
+  (C) Copyright 2024, Eric Bergman-Terrell
   
   This file is part of Vault 3.
 
@@ -30,6 +30,7 @@ import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.preference.PreferenceManager;
 import android.util.Log;
@@ -254,7 +255,11 @@ public class Vault3 extends AsyncTaskActivity {
 		final IntentFilter intentFilter = new IntentFilter(CustomBroadcastReceiver.UPDATE_TEXT);
 		intentFilter.addAction(CustomBroadcastReceiver.UPDATE_FONT);
 
-		registerReceiver(customBroadcastReceiver, intentFilter);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			registerReceiver(customBroadcastReceiver, intentFilter, RECEIVER_EXPORTED);
+		} else {
+			registerReceiver(customBroadcastReceiver, intentFilter);
+		}
 
 		return customBroadcastReceiver;
 	}
