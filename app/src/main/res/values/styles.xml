@@ -38,6 +38,7 @@
 
 	<style name="Activity" >
 		<item name="android:layout_margin">8dp</item>
+		<item name="android:fitsSystemWindows">true</item>
 	</style>
 
 </resources>
