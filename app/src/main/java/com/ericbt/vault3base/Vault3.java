@@ -104,6 +104,8 @@ public class Vault3 extends AsyncTaskActivity {
 
 	private Handler timerCallback;
 
+	private boolean fileSyncDialogVisible = false;
+
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(StringLiterals.LogTag, getPackageName());
@@ -412,37 +414,44 @@ public class Vault3 extends AsyncTaskActivity {
 	}
 
 	private void userReactsToFileUpdate() {
-		new AlertDialog.Builder(this)
-			.setTitle("Document Updated")
-			.setMessage("The current document was updated by another app after you opened it.")
-			.setPositiveButton("Use Updates", (dialog, which) -> {
-				Log.i(StringLiterals.LogTag, "User chose to use updates");
+		if (!fileSyncDialogVisible) {
+			fileSyncDialogVisible = true;
 
-				reloadCurrentDocument();
-			})
-			.setNegativeButton("Discard Updates", (dialog, which) -> {
-				Log.i(StringLiterals.LogTag, "User chose to discard updates");
+			new AlertDialog.Builder(this)
+					.setTitle("Document Updated")
+					.setMessage("The current document was updated by another app after you opened it.")
+					.setPositiveButton("Use Updates", (dialog, which) -> {
+						Log.i(StringLiterals.LogTag, "User chose to use updates");
 
-				final long now = new Date().getTime();
+						reloadCurrentDocument();
+					})
+					.setNegativeButton("Discard Updates", (dialog, which) -> {
+						Log.i(StringLiterals.LogTag, "User chose to discard updates");
 
-				// Make sure user doesn't continue to get prompted for changes.
-				final boolean touchSuccessful =
-						new File(
-								Globals
-										.getApplication()
-										.getVaultDocument()
-										.getDatabase().getPath()
-						).setLastModified(now);
+						final long now = new Date().getTime();
 
-				if (!touchSuccessful) {
-					Log.e(StringLiterals.LogTag, "Touch of temporary file unsuccessful");
-				}
+						// Make sure user doesn't continue to get prompted for changes.
+						final boolean touchSuccessful =
+								new File(
+										Globals
+												.getApplication()
+												.getVaultDocument()
+												.getDatabase().getPath()
+								).setLastModified(now);
 
-				startTimer();
-			})
-			.setCancelable(false)
-			.create()
-			.show();
+						if (!touchSuccessful) {
+							Log.e(StringLiterals.LogTag, "Touch of temporary file unsuccessful");
+						}
+
+						startTimer();
+					})
+					.setOnDismissListener(dialog -> {
+						fileSyncDialogVisible = false;
+					})
+					.setCancelable(false)
+					.create()
+					.show();
+		}
 	}
 
 	@Override

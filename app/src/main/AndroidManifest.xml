@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionCode="15191"
-    android:versionName="1.91">
+    android:versionCode="15192"
+    android:versionName="1.92">
 
     <application
         android:name="com.ericbt.vault3base.VaultApplication"
