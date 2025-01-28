@@ -20,6 +20,10 @@
 
 package com.ericbt.vault3base;
 
+import java.io.File;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
@@ -32,7 +36,11 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.preference.PreferenceManager;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.ContextMenu;
@@ -59,8 +67,6 @@ import com.ericbt.vault3base.async.workers.SaveChanges;
 import com.ericbt.vault3base.async.workers.Sort;
 import com.ericbt.vault3base.async.workers.UnIndentItem;
 import com.ericbt.vault3base.async.workers.UpdateNavigateListItem;
-
-import java.io.File;
 
 import commonCode.VaultDocumentVersion;
 import commonCode.VaultException;
@@ -93,6 +99,13 @@ public class Vault3 extends AsyncTaskActivity {
 	public static final int PASSWORD_PROMPT_BEFORE_UPGRADE = 10;
 
 	private DocumentAction documentAction;
+
+	private static final int TIMER_DELAY = 1000 * 60;
+	private static final int TIMER_PERIOD = 1000 * 60;
+
+	private Timer fileExternalUpdateTimer;
+
+	private Handler timerCallback;
 
 	@Override
     public void onCreate(Bundle savedInstanceState) {
@@ -195,6 +208,16 @@ public class Vault3 extends AsyncTaskActivity {
 			startActivityForResult(licenseTermsIntent, ACCEPT_LICENSE_TERMS);
 		}
 
+		timerCallback = new Handler(Looper.getMainLooper()) {
+			public void handleMessage(Message msg) {
+				Log.i(StringLiterals.LogTag, "received timer message");
+
+				stopTimer();
+
+				userReactsToFileUpdate();
+			}
+		};
+
 		Log.i(StringLiterals.LogTag, "Vault3.onCreate end");
 	}
 
@@ -285,7 +308,11 @@ public class Vault3 extends AsyncTaskActivity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		
+
+		Log.i(StringLiterals.LogTag, "Vault3.onPause");
+
+		stopTimer();
+
 		ApplicationState applicationState = null;
 		
 		VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
@@ -318,7 +345,7 @@ public class Vault3 extends AsyncTaskActivity {
         if (getIntent() != null && getIntent().getData() != null) {
             final String fileManagerPath = getIntent().getData().getPath();
 
-            getIntent().setData(null); // we don't want to do this a second time after the password UI is mismissed.
+            getIntent().setData(null); // we don't want to do this a second time after the password UI is dismissed.
             documentAction = null;
 
             if (new File(fileManagerPath).exists()) {
@@ -337,6 +364,8 @@ public class Vault3 extends AsyncTaskActivity {
 			
 			documentAction = null;
 		}
+
+		startTimer();
 
 		Log.i(StringLiterals.LogTag, "Vault3.onResume end");
 	}
@@ -379,6 +408,40 @@ public class Vault3 extends AsyncTaskActivity {
 		} else {
 			closeDocument();
 		}
+	}
+
+	private void userReactsToFileUpdate() {
+		new AlertDialog.Builder(this)
+			.setTitle("Document Updated")
+			.setMessage("The current document was updated by another app after you opened it.")
+			.setPositiveButton("Use Updates", (dialog, which) -> {
+				Log.i(StringLiterals.LogTag, "User chose to use updates");
+
+				reloadCurrentDocument();
+			})
+			.setNegativeButton("Discard Updates", (dialog, which) -> {
+				Log.i(StringLiterals.LogTag, "User chose to discard updates");
+
+				final long now = new Date().getTime();
+
+				// Make sure user doesn't continue to get prompted for changes.
+				final boolean touchSuccessful =
+						new File(
+								Globals
+										.getApplication()
+										.getVaultDocument()
+										.getDatabase().getPath()
+						).setLastModified(now);
+
+				if (!touchSuccessful) {
+					Log.e(StringLiterals.LogTag, "Touch of temporary file unsuccessful");
+				}
+
+				startTimer();
+			})
+			.setCancelable(false)
+			.create()
+			.show();
 	}
 
 	@Override
@@ -833,9 +896,6 @@ public class Vault3 extends AsyncTaskActivity {
 
 		final boolean enableRoot = enabled && !outlineItem.isRoot();
 
-		int color = enableRoot ? Color.WHITE : Color.DKGRAY;
-		parentTextView.setTextColor(color);
-
 		goUpImage.setEnabled(enableRoot);
 		parentTextView.setEnabled(enableRoot);
 
@@ -1087,5 +1147,59 @@ public class Vault3 extends AsyncTaskActivity {
 		super.onUserInteraction();
 
 		enableDisableSaveButton();
+	}
+
+	private void startTimer() {
+		Log.i(StringLiterals.LogTag, "startTimer");
+
+		fileExternalUpdateTimer = new Timer(true);
+
+		final TimerTask timerTask = new TimerTask() {
+			public void run() {
+				Log.i(StringLiterals.LogTag, "timer task tick");
+
+				try {
+					Log.i(StringLiterals.LogTag, "checking file timestamps");
+
+					final DocumentFile documentFile = DocumentFile.fromTreeUri(getApplicationContext(), VaultPreferenceActivity.getSelectedFileUri());
+
+                    final long documentFileLastModified = documentFile.lastModified();
+
+					final long tempFileLastModified =
+							new File(Globals.getApplication().getVaultDocument()
+									.getDatabase().getPath()).lastModified();
+
+					Log.i(StringLiterals.LogTag, String.format("documentFile: %d", documentFileLastModified));
+					Log.i(StringLiterals.LogTag, String.format("tempFile:     %d", tempFileLastModified));
+
+					if (documentFileLastModified > tempFileLastModified) {
+						Log.i(StringLiterals.LogTag, "documentFile later than tempFile");
+
+						// Document file has been updated since temp file was created or updated.
+						Vault3.this.timerCallback.sendEmptyMessage(0);
+					}
+				} catch (Exception ex) {
+					Log.e(StringLiterals.LogTag, String.format("timer task exception %s", ex.getMessage()));
+				}
+			}
+		};
+
+		fileExternalUpdateTimer.schedule(timerTask, TIMER_DELAY, TIMER_PERIOD);
+	}
+
+	private void stopTimer() {
+		Log.i(StringLiterals.LogTag, "stopTimer");
+
+		Log.i(StringLiterals.LogTag, "cancel fileExternalUpdateTimer");
+		fileExternalUpdateTimer.cancel();
+	}
+
+	private void reloadCurrentDocument() {
+		final String currentDocumentName = new File(
+				Globals.getApplication().getVaultDocument().getDatabase().getPath()).getName();
+
+		final Intent fileActivity = new Intent(this, FileActivity.class);
+		fileActivity.putExtra(StringLiterals.ForceDocumentLoad, currentDocumentName);
+		startActivityForResult(fileActivity, FILE_ACTIVITY_RESULT);
 	}
 }

@@ -65,4 +65,6 @@ public class StringLiterals {
 	public static final String EmptyString                  = "";
 	public static final String JournalSuffix                = "-journal";
 	public static final String Exit							= "EXIT";
+
+	public static final String ForceDocumentLoad            = "ForceDocumentLoad";
 }

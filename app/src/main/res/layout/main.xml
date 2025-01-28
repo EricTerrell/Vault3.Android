@@ -47,6 +47,7 @@
         <TextView
             android:id="@+id/tvParent"
             style="@style/BigBoldWhiteText"
+            android:textColor="@drawable/root_title_color"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"

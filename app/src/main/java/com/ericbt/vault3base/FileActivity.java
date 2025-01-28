@@ -21,7 +21,9 @@
 package com.ericbt.vault3base;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
@@ -69,12 +71,16 @@ public class FileActivity extends AsyncTaskActivity {
 
 	private boolean searching = false;
 
+	private String forceDocumentLoad;
+
 	public void setSearching(boolean searching) { this.searching = searching; }
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		Log.i(StringLiterals.LogTag, "FileActivity.onCreate");
 		super.onCreate(savedInstanceState);
+
+		forceDocumentLoad = getIntent().getStringExtra(StringLiterals.ForceDocumentLoad);
 
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -398,6 +404,10 @@ public class FileActivity extends AsyncTaskActivity {
     public void updateFileList(DocumentFile[] documentFiles) {
 		arrayAdapter.clear();
 		arrayAdapter.addAll(documentFiles);
+
+		if (forceDocumentLoad != null) {
+			loadUpdates(documentFiles);
+		}
 	}
 
 	private void displayFileTypeRequiredMessage() {
@@ -456,5 +466,26 @@ public class FileActivity extends AsyncTaskActivity {
 		} else {
 			openNewDocument(parent, position);
 		}
+	}
+
+	private void loadUpdates(DocumentFile[] documentFiles) {
+		Arrays.stream(documentFiles).forEach(documentFile -> {
+			if (Objects.equals(documentFile.getName(), forceDocumentLoad)) {
+				// Close Vault database
+				final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
+
+				if (vaultDocument != null) {
+					vaultDocument.close();
+
+					Globals.getApplication().setVaultDocument(null);
+				}
+
+				// Copy updates to temp file
+				new OpenDocumentFile().openDocumentFile(
+						documentFile.getUri(), documentFile.getName(), this);
+			}
+		});
+
+		forceDocumentLoad = null;
 	}
 }
