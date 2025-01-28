@@ -87,4 +87,15 @@
             >
         </ListPreference>
     </PreferenceCategory>
+	<PreferenceCategory android:title="File Sync Check Frequency">
+		<ListPreference
+			android:key="SyncCheckTime"
+			android:title="Check for File Sync"
+			android:summary="Time"
+			android:entries="@array/SyncCheckTimes"
+			android:entryValues="@array/SyncCheckTimesEntries"
+			android:defaultValue="15"
+			>
+		</ListPreference>
+	</PreferenceCategory>
 </PreferenceScreen>

@@ -100,9 +100,6 @@ public class Vault3 extends AsyncTaskActivity {
 
 	private DocumentAction documentAction;
 
-	private static final int TIMER_DELAY = 1000 * 60;
-	private static final int TIMER_PERIOD = 1000 * 60;
-
 	private Timer fileExternalUpdateTimer;
 
 	private Handler timerCallback;
@@ -365,13 +362,17 @@ public class Vault3 extends AsyncTaskActivity {
 			documentAction = null;
 		}
 
-		startTimer();
+		if (Globals.getApplication().getVaultDocument() != null) {
+			startTimer();
+		}
 
 		Log.i(StringLiterals.LogTag, "Vault3.onResume end");
 	}
 
 	private void closeDocument() {
 		Log.i(StringLiterals.LogTag, "Vault3.closeDocument");
+
+		stopTimer();
 
 		final VaultDocument vaultDocument = Globals.getApplication().getVaultDocument();
 
@@ -1156,12 +1157,12 @@ public class Vault3 extends AsyncTaskActivity {
 
 		final TimerTask timerTask = new TimerTask() {
 			public void run() {
-				Log.i(StringLiterals.LogTag, "timer task tick");
-
 				try {
-					Log.i(StringLiterals.LogTag, "checking file timestamps");
+					Log.i(StringLiterals.LogTag, "timer task: checking file timestamps");
 
-					final DocumentFile documentFile = DocumentFile.fromTreeUri(getApplicationContext(), VaultPreferenceActivity.getSelectedFileUri());
+					final DocumentFile documentFile =
+							DocumentFile.fromTreeUri(getApplicationContext(),
+									VaultPreferenceActivity.getSelectedFileUri());
 
                     final long documentFileLastModified = documentFile.lastModified();
 
@@ -1169,8 +1170,10 @@ public class Vault3 extends AsyncTaskActivity {
 							new File(Globals.getApplication().getVaultDocument()
 									.getDatabase().getPath()).lastModified();
 
-					Log.i(StringLiterals.LogTag, String.format("documentFile: %d", documentFileLastModified));
-					Log.i(StringLiterals.LogTag, String.format("tempFile:     %d", tempFileLastModified));
+					Log.i(StringLiterals.LogTag,
+							String.format("documentFile: %d", documentFileLastModified));
+					Log.i(StringLiterals.LogTag,
+							String.format("tempFile:     %d", tempFileLastModified));
 
 					if (documentFileLastModified > tempFileLastModified) {
 						Log.i(StringLiterals.LogTag, "documentFile later than tempFile");
@@ -1179,19 +1182,25 @@ public class Vault3 extends AsyncTaskActivity {
 						Vault3.this.timerCallback.sendEmptyMessage(0);
 					}
 				} catch (Exception ex) {
-					Log.e(StringLiterals.LogTag, String.format("timer task exception %s", ex.getMessage()));
+					Log.e(StringLiterals.LogTag,
+							String.format("timer task exception %s", ex.getMessage()));
 				}
 			}
 		};
 
-		fileExternalUpdateTimer.schedule(timerTask, TIMER_DELAY, TIMER_PERIOD);
+		final int syncCheckTime = VaultPreferenceActivity.getSyncCheckTime();
+		Log.i(StringLiterals.LogTag, String.format("syncCheckTime: %d", syncCheckTime));
+
+		fileExternalUpdateTimer.schedule(timerTask, syncCheckTime, syncCheckTime);
 	}
 
 	private void stopTimer() {
 		Log.i(StringLiterals.LogTag, "stopTimer");
 
-		Log.i(StringLiterals.LogTag, "cancel fileExternalUpdateTimer");
-		fileExternalUpdateTimer.cancel();
+		if (fileExternalUpdateTimer != null) {
+			Log.i(StringLiterals.LogTag, "cancel fileExternalUpdateTimer");
+			fileExternalUpdateTimer.cancel();
+		}
 	}
 
 	private void reloadCurrentDocument() {

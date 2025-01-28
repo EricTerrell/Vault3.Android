@@ -52,9 +52,11 @@ public class VaultPreferenceActivity extends AppCompatActivity {
 	private static final String SortSearchResultsKey       = "SortSearchResults";
 	private static final String FolderUriKey               = "FolderUri";
 	private static final String SelectedFileUriKey         = "SelectedFileUriKey";
+	private static final String SyncCheckTime              = "SyncCheckTime";
 
 	private static final int defaultParentOutlineItemID   = -1;
 	private static final int defaultMaxSearchHits         = 25;
+	private static final int defaultSyncCheckTime	      = 15;
 	
 	/**
 	 * Generate programmatically generated default values, such as the value for RootFolderPath.
@@ -473,8 +475,10 @@ public class VaultPreferenceActivity extends AppCompatActivity {
 	}
 
 	public static boolean getSortSearchResults() {
-		return PreferenceManager.getDefaultSharedPreferences(Globals.getApplication()
-				.getApplicationContext()).getBoolean(SortSearchResultsKey, false);
+		return PreferenceManager
+				.getDefaultSharedPreferences(Globals.getApplication()
+				.getApplicationContext())
+				.getBoolean(SortSearchResultsKey, false);
 	}
 
 	@Override
@@ -488,5 +492,15 @@ public class VaultPreferenceActivity extends AppCompatActivity {
 		}
 		
 		return result;
+	}
+
+	public static int getSyncCheckTime() {
+		final String checkTimeString =
+				PreferenceManager
+				.getDefaultSharedPreferences(Globals.getApplication()
+				.getApplicationContext())
+				.getString(SyncCheckTime, String.valueOf(defaultSyncCheckTime));
+
+		return Integer.parseInt(checkTimeString) * 1000;
 	}
 }
